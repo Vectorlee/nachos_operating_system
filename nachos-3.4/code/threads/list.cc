@@ -236,3 +236,25 @@ List::SortedRemove(int *keyPtr)
     return thing;
 }
 
+//=============================================
+void
+List::removeItem(int id)
+{
+    ListElement *ptr, *temp;		// keep track
+ 
+    if (IsEmpty()) {	// if list is empty, put
+        return;
+    } else if (id < first->key) {	
+	return;
+    } else {		// look for first elt in list bigger than item
+        for (ptr = first; ptr->next != NULL; ptr = ptr->next) {
+            if (id == ptr->next->key) {
+                temp = ptr->next;
+		ptr->next = temp->next;
+                //delete temp; 
+		return;
+	    }
+	}
+    }
+}
+//==============================================

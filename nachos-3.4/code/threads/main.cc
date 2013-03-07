@@ -159,6 +159,22 @@ main(int argc, char **argv)
 #endif // NETWORK
     }
 
+//================================================    
+    
+    char command[20];
+    while(scanf("%s", command))                 //we use a while loop to receive the command
+    {
+        if(!strcmp((const char*)command, "ts"))
+           threadmanager -> threadStatus(); 
+        else if(!strcmp((const char*)command, "exit"))
+           break; 
+        else
+            printf("no such command!\n");
+    }
+
+//================================================
+
+
     currentThread->Finish();	// NOTE: if the procedure "main" 
 				// returns, then the program "nachos"
 				// will exit (as any other normal program

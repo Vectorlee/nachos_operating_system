@@ -38,6 +38,14 @@ Thread::Thread(char* threadName)
     stackTop = NULL;
     stack = NULL;
     status = JUST_CREATED;
+
+//=================================
+   
+    threadID = threadmanager -> generateID(); 
+
+//=================================
+
+
 #ifdef USER_PROGRAM
     space = NULL;
 #endif
@@ -60,6 +68,7 @@ Thread::~Thread()
     DEBUG('t', "Deleting thread \"%s\"\n", name);
 
     ASSERT(this != currentThread);
+     
     if (stack != NULL)
 	DeallocBoundedArray((char *) stack, StackSize * sizeof(int));
 }
@@ -89,10 +98,21 @@ Thread::Fork(VoidFunctionPtr func, int arg)
 {
     DEBUG('t', "Forking thread \"%s\" with func = 0x%x, arg = %d\n",
 	  name, (int) func, arg);
-    
+
+//===============================================
+    if((threadmanager -> getCurrentNum()) >= 128 )
+    {
+        printf("The number of threads is exceeding 128, fork fucntion failed!\n");
+        return;     //terminate the program
+    }
+    threadmanager -> addThread(this);
+    printf("%d: added\n", threadID);
+//===============================================
+
     StackAllocate(func, arg);
 
-    IntStatus oldLevel = interrupt->SetLevel(IntOff);
+    IntStatus oldLevel = interrupt->SetLevel(IntOff);   //the 'SetLevel' function will set the new level 
+                                                        //and return the previous level
     scheduler->ReadyToRun(this);	// ReadyToRun assumes that interrupts 
 					// are disabled!
     (void) interrupt->SetLevel(oldLevel);
@@ -149,7 +169,15 @@ Thread::Finish ()
     DEBUG('t', "Finishing thread \"%s\"\n", getName());
     
     threadToBeDestroyed = currentThread;
+
+//==============================================
+    
+    threadmanager -> removeThread(threadID); //if the thread is not in the list, nothing will happen
+    printf("%d: removed\n", threadID);
+//==============================================
+    
     Sleep();					// invokes SWITCH
+
     // not reached
 }
 
@@ -175,7 +203,7 @@ void
 Thread::Yield ()
 {
     Thread *nextThread;
-    IntStatus oldLevel = interrupt->SetLevel(IntOff);
+    IntStatus oldLevel = interrupt->SetLevel(IntOff);   //*****
     
     ASSERT(this == currentThread);
     
@@ -186,7 +214,7 @@ Thread::Yield ()
 	scheduler->ReadyToRun(this);
 	scheduler->Run(nextThread);
     }
-    (void) interrupt->SetLevel(oldLevel);
+    (void) interrupt->SetLevel(oldLevel);              //****just like the mutex
 }
 
 //----------------------------------------------------------------------
@@ -218,7 +246,7 @@ Thread::Sleep ()
     
     DEBUG('t', "Sleeping thread \"%s\"\n", getName());
 
-    status = BLOCKED;
+    status = BLOCKED;            //the current thread
     while ((nextThread = scheduler->FindNextToRun()) == NULL)
 	interrupt->Idle();	// no one to run, wait for an interrupt
         

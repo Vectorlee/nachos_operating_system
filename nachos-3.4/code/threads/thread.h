@@ -80,6 +80,10 @@ class Thread {
     int* stackTop;			 // the current stack pointer
     int machineState[MachineStateSize];  // all registers except for stackTop
 
+//====================================
+    int threadID;
+//====================================
+
   public:
     Thread(char* debugName);		// initialize a Thread 
     ~Thread(); 				// deallocate a Thread
@@ -101,6 +105,15 @@ class Thread {
     void setStatus(ThreadStatus st) { status = st; }
     char* getName() { return (name); }
     void Print() { printf("%s, ", name); }
+
+//=====================================================
+
+    int getStatus() {return (int)status; }
+    int getID() { return threadID; }
+
+//=====================================================
+
+
 
   private:
     // some of the private data for this class is listed above

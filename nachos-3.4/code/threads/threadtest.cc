@@ -13,7 +13,7 @@
 #include "system.h"
 
 // testnum is set in main.cc
-int testnum = 1;
+int testnum = 2;
 
 //----------------------------------------------------------------------
 // SimpleThread
@@ -41,16 +41,38 @@ SimpleThread(int which)
 //	to call SimpleThread, and then calling SimpleThread ourselves.
 //----------------------------------------------------------------------
 
+void 
+Buffer_Overflow(int num)
+{
+    Buffer_Overflow(num + 1);
+}
+
 void
 ThreadTest1()
 {
     DEBUG('t', "Entering ThreadTest1");
 
     Thread *t = new Thread("forked thread");
+    t->Fork(SimpleThread, t->getID());
+    //SimpleThread(0);
+    //t-> Fork(Buffer_Overflow, 1); 
 
-    t->Fork(SimpleThread, 1);
-    SimpleThread(0);
 }
+
+//======================================================
+void
+ThreadTest2()
+{
+    DEBUG('t', "Entering ThreadTest2");
+    
+    Thread *t[150];
+    for(int i = 0; i < 150; i++)
+    {
+        t[i] = new Thread("forked thread");
+        t[i]->Fork(SimpleThread, t[i] -> getID());
+    }
+}
+//======================================================
 
 //----------------------------------------------------------------------
 // ThreadTest
@@ -64,6 +86,9 @@ ThreadTest()
     case 1:
 	ThreadTest1();
 	break;
+    case 2:
+        ThreadTest2();
+        break;
     default:
 	printf("No test specified.\n");
 	break;
