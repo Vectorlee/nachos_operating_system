@@ -160,7 +160,7 @@ main(int argc, char **argv)
     }
 
 //================================================    
-    
+/*   
     char command[20];
     while(scanf("%s", command))                 //we use a while loop to receive the command
     {
@@ -171,7 +171,7 @@ main(int argc, char **argv)
         else
             printf("no such command!\n");
     }
-
+*/
 //================================================
 
 

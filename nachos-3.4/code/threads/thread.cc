@@ -41,7 +41,8 @@ Thread::Thread(char* threadName)
 
 //=================================
    
-    threadID = threadmanager -> generateID(); 
+    threadID = threadmanager -> generateID();
+    priority = 5; 
 
 //=================================
 
@@ -68,10 +69,26 @@ Thread::~Thread()
     DEBUG('t', "Deleting thread \"%s\"\n", name);
 
     ASSERT(this != currentThread);
-     
+
     if (stack != NULL)
 	DeallocBoundedArray((char *) stack, StackSize * sizeof(int));
 }
+//-----------------------------------------------------------------------
+//Thread::setPriority
+//      Set the priority of the specific thread, the number offered to the
+//      function must be small than 10;
+//
+//-----------------------------------------------------------------------
+
+void 
+Thread::setPriority(int value)
+{
+     ASSERT(value <= 10);
+      
+     priority = value;
+     
+}
+
 
 //----------------------------------------------------------------------
 // Thread::Fork
@@ -96,7 +113,7 @@ Thread::~Thread()
 void 
 Thread::Fork(VoidFunctionPtr func, int arg)
 {
-    DEBUG('t', "Forking thread \"%s\" with func = 0x%x, arg = %d\n",
+    DEBUG('t', "Forking thread \"%s\"   with func = 0x%x, arg = %d\n",
 	  name, (int) func, arg);
 
 //===============================================
@@ -125,7 +142,7 @@ Thread::Fork(VoidFunctionPtr func, int arg)
 //	we wouldn't need to worry about this, but we don't.
 //
 // 	NOTE: Nachos will not catch all stack overflow conditions.
-//	In other words, your program may still crash because of an overflow.
+//  	In other words, your program may still crash because of an overflow.
 //
 // 	If you get bizarre results (such as seg faults where there is no code)
 // 	then you *may* need to increase the stack size.  You can avoid stack
@@ -137,11 +154,14 @@ void
 Thread::CheckOverflow()
 {
     if (stack != NULL)
+    {   
+        //printf("*** Check Over flow ***\n");
 #ifdef HOST_SNAKE			// Stacks grow upward on the Snakes
 	ASSERT(stack[StackSize - 1] == STACK_FENCEPOST);
 #else
 	ASSERT((int) *stack == (int) STACK_FENCEPOST);
 #endif
+    }
 }
 
 //----------------------------------------------------------------------
@@ -204,7 +224,7 @@ Thread::Yield ()
 {
     Thread *nextThread;
     IntStatus oldLevel = interrupt->SetLevel(IntOff);   //*****
-    
+
     ASSERT(this == currentThread);
     
     DEBUG('t', "Yielding thread \"%s\"\n", getName());
@@ -305,7 +325,7 @@ Thread::StackAllocate (VoidFunctionPtr func, int arg)
 #endif  // HOST_SNAKE
     
     machineState[PCState] = (int) ThreadRoot;
-    machineState[StartupPCState] = (int) InterruptEnable;
+    machineState[StartupPCState] = (int) InterruptEnable; 
     machineState[InitialPCState] = (int) func;
     machineState[InitialArgState] = arg;
     machineState[WhenDonePCState] = (int) ThreadFinish;

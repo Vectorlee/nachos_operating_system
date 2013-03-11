@@ -19,6 +19,13 @@ Statistics *stats;			// performance metrics
 Timer *timer;				// the hardware timer device,
 					// for invoking context switches
 
+
+//=================================================
+
+ThreadManager *threadmanager;
+
+//=================================================
+
 #ifdef FILESYS_NEEDED
 FileSystem  *fileSystem;
 #endif
@@ -129,6 +136,11 @@ Initialize(int argc, char **argv)
 #endif
     }
 
+//==============================================
+    threadmanager = new ThreadManager();
+      
+//==============================================
+
     DebugInit(debugArgs);			// initialize DEBUG messages
     stats = new Statistics();			// collect statistics
     interrupt = new Interrupt;			// start up interrupt handling
@@ -143,7 +155,12 @@ Initialize(int argc, char **argv)
     // object to save its state. 
     currentThread = new Thread("main");		
     currentThread->setStatus(RUNNING);
+//============================================
+    
+    currentThread -> setPriority(10);
+    threadmanager -> addThread(currentThread);
 
+//============================================
     interrupt->Enable();
     CallOnUserAbort(Cleanup);			// if user hits ctl-C
     
@@ -172,6 +189,13 @@ void
 Cleanup()
 {
     printf("\nCleaning up...\n");
+
+//=============================================
+
+    delete threadmanager;
+
+//=============================================
+
 #ifdef NETWORK
     delete postOffice;
 #endif

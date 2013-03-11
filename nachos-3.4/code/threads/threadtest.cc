@@ -29,7 +29,7 @@ SimpleThread(int which)
 {
     int num;
     
-    for (num = 0; num < 5; num++) {
+    for (num = 0; num < 2; num++) {
 	printf("*** thread %d looped %d times\n", which, num);
         currentThread->Yield();
     }
@@ -44,7 +44,11 @@ SimpleThread(int which)
 void 
 Buffer_Overflow(int num)
 {
-    Buffer_Overflow(num + 1);
+    int large[5016];
+    memset(large, 0, sizeof(large));
+
+    printf("*** 5016 the forked thread ***\n");
+    //currentThread -> Yield();
 }
 
 void
@@ -53,10 +57,9 @@ ThreadTest1()
     DEBUG('t', "Entering ThreadTest1");
 
     Thread *t = new Thread("forked thread");
-    t->Fork(SimpleThread, t->getID());
-    //SimpleThread(0);
-    //t-> Fork(Buffer_Overflow, 1); 
-
+    //t->Fork(SimpleThread, t->getID());
+    t-> Fork(Buffer_Overflow, 1); 
+    SimpleThread(0);
 }
 
 //======================================================
@@ -65,11 +68,13 @@ ThreadTest2()
 {
     DEBUG('t', "Entering ThreadTest2");
     
-    Thread *t[150];
-    for(int i = 0; i < 150; i++)
+    Thread *t[20];
+    for(int i = 0; i < 20; i++)   
     {
         t[i] = new Thread("forked thread");
-        t[i]->Fork(SimpleThread, t[i] -> getID());
+        
+        t[i] -> setPriority((i * i) % 10 + 1);
+        t[i] -> Fork(SimpleThread, t[i] -> getID());
     }
 }
 //======================================================

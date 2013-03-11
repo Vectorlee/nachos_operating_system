@@ -81,7 +81,9 @@ class Thread {
     int machineState[MachineStateSize];  // all registers except for stackTop
 
 //====================================
+
     int threadID;
+    int priority;    // 0 ~ 10
 //====================================
 
   public:
@@ -110,6 +112,9 @@ class Thread {
 
     int getStatus() {return (int)status; }
     int getID() { return threadID; }
+    
+    int getPriority() { return priority; }
+    void setPriority(int value);
 
 //=====================================================
 

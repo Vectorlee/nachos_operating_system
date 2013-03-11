@@ -237,6 +237,7 @@ List::SortedRemove(int *keyPtr)
 }
 
 //=============================================
+
 void
 List::removeItem(int id)
 {
