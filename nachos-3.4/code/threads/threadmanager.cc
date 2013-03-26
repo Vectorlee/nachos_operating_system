@@ -7,9 +7,6 @@
 // of liability and disclaimer of warranty provisions.
 
 #include "threadmanager.h"
-#include "list.h"
-#include "thread.h"
-
 //
 //      private:
 //              int threadNumber;         //record the totoal number of the threads
@@ -42,6 +39,7 @@ ThreadManager::ThreadManager()
        threadIndex = 0;
        
        threadList = new List();
+       mutex = new Lock("mutex");
 }
 
 
@@ -49,6 +47,8 @@ ThreadManager::~ThreadManager()
 {
        if(threadList != NULL)
           delete threadList;
+
+       delete mutex;
 } 
 
 int 
@@ -79,17 +79,23 @@ ThreadManager::threadStatus()      // 'TS' output the status of all the threads
 void 
 ThreadManager::addThread(Thread *newThread)         // add a thread into the list when a thread is forked
 {
+    mutex -> Acquire();
+
     threadList -> SortedInsert((void*)newThread, newThread -> getID());
-    
     threadNumber++;
+
+    mutex -> Release();
 }
 
 void 
 ThreadManager::removeThread(int ID)      // remove a thread from the list when the thread is finished 
 {
-    threadList -> removeItem(ID);
+
+    mutex -> Acquire();
     
+    threadList -> removeItem(ID);
     threadNumber--;
 
+    mutex -> Acquire();
 }
 

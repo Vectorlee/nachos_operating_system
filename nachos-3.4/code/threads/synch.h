@@ -63,8 +63,11 @@ class Semaphore {
 // may release it.  As with semaphores, you can't read the lock value
 // (because the value might change immediately after you read it).  
 
+enum LockStatus {FREE, BUSY};
+
 class Lock {
   public:
+
     Lock(char* debugName);  		// initialize lock to be FREE
     ~Lock();				// deallocate lock
     char* getName() { return name; }	// debugging assist
@@ -72,14 +75,23 @@ class Lock {
     void Acquire(); // these are the only operations on a lock
     void Release(); // they are both *atomic*
 
-    bool isHeldByCurrentThread();	// true if the current thread
+    bool isHeldByCurrentThread();
+                                        // true if the current thread
 					// holds this lock.  Useful for
 					// checking in Release, and in
 					// Condition variable ops below.
 
   private:
     char* name;				// for debugging
+
     // plus some other stuff you'll need to define
+//==================================================
+    
+    LockStatus status;
+    Thread* heldThread;
+
+    List *queue;
+//==================================================
 };
 
 // The following class defines a "condition variable".  A condition
@@ -132,5 +144,12 @@ class Condition {
   private:
     char* name;
     // plus some other stuff you'll need to define
+//=======================================================
+
+    List* queue;
+
+
+//=======================================================
+
 };
 #endif // SYNCH_H

@@ -84,6 +84,10 @@ class Thread {
 
     int threadID;
     int priority;    // 0 ~ 10
+    
+    int currentTimePeriod;  // 1 ~ 10 
+    int baseTimePeriod;
+
 //====================================
 
   public:
@@ -115,6 +119,14 @@ class Thread {
     
     int getPriority() { return priority; }
     void setPriority(int value);
+
+    void setBaseTimePeriod(int value);
+    int getBaseTimePeriod() { return baseTimePeriod; }
+ 
+    int getCurrentTimePeriod() { return currentTimePeriod; }
+    void setCurrentTimePeriod(int value);
+
+    void Clock();
 
 //=====================================================
 

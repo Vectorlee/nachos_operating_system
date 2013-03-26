@@ -43,6 +43,8 @@ Thread::Thread(char* threadName)
    
     threadID = threadmanager -> generateID();
     priority = 5; 
+    baseTimePeriod = 50;
+    currentTimePeriod = 50;
 
 //=================================
 
@@ -73,6 +75,7 @@ Thread::~Thread()
     if (stack != NULL)
 	DeallocBoundedArray((char *) stack, StackSize * sizeof(int));
 }
+
 //-----------------------------------------------------------------------
 //Thread::setPriority
 //      Set the priority of the specific thread, the number offered to the
@@ -83,12 +86,50 @@ Thread::~Thread()
 void 
 Thread::setPriority(int value)
 {
-     ASSERT(value <= 10);
+     ASSERT(value <= 10 && value >= 0);
       
      priority = value;
      
 }
 
+//-----------------------------------------------------------------------
+//Thread::setTimePeriod
+//      Set the time period of the specific thread, the number offered to the
+//      function must be small than 10;
+//
+//      the number 1 mean that the time period is 10% of the TimeTicks 
+//
+//      the number 10 mean that the time period is 100% of the TimeTicks
+//      thereby, 100
+//-----------------------------------------------------------------------
+
+void 
+Thread::setBaseTimePeriod(int value)
+{
+     ASSERT(value <= 10 && value >= 1);
+      
+     baseTimePeriod = value * 10;
+     currentTimePeriod = value * 10;
+}
+
+void 
+Thread::setCurrentTimePeriod(int value)
+{
+     ASSERT(value <= 10 && value >= 0);
+      
+     currentTimePeriod = value * 10;
+}
+
+//-----------------------------------------------------------------------
+//Thread::Clock
+//   
+//-----------------------------------------------------------------------
+
+void 
+Thread::Clock()
+{
+     interrupt -> OneTick(); 
+}
 
 //----------------------------------------------------------------------
 // Thread::Fork
@@ -123,7 +164,7 @@ Thread::Fork(VoidFunctionPtr func, int arg)
         return;     //terminate the program
     }
     threadmanager -> addThread(this);
-    printf("%d: added\n", threadID);
+    printf("add thread: %d\n", threadID);
 //===============================================
 
     StackAllocate(func, arg);
@@ -133,6 +174,7 @@ Thread::Fork(VoidFunctionPtr func, int arg)
     scheduler->ReadyToRun(this);	// ReadyToRun assumes that interrupts 
 					// are disabled!
     (void) interrupt->SetLevel(oldLevel);
+
 }    
 
 //----------------------------------------------------------------------
@@ -193,7 +235,8 @@ Thread::Finish ()
 //==============================================
     
     threadmanager -> removeThread(threadID); //if the thread is not in the list, nothing will happen
-    printf("%d: removed\n", threadID);
+    printf("removed thread: %d\n", threadID);
+
 //==============================================
     
     Sleep();					// invokes SWITCH
@@ -230,10 +273,22 @@ Thread::Yield ()
     DEBUG('t', "Yielding thread \"%s\"\n", getName());
     
     nextThread = scheduler->FindNextToRun();
+
     if (nextThread != NULL) {
-	scheduler->ReadyToRun(this);
-	scheduler->Run(nextThread);
+//==================================================
+
+        if(currentThread -> getPriority() < nextThread -> getPriority())  //the current thread is still get the prior
+        { 
+            scheduler->ReadyToRun(nextThread); //insert the thread back to the list
+        }                                      //we still run the current thread
+        else
+        { 
+	    scheduler->ReadyToRun(this);   
+	    scheduler->Run(nextThread);
+        }
+//===================================================
     }
+
     (void) interrupt->SetLevel(oldLevel);              //****just like the mutex
 }
 

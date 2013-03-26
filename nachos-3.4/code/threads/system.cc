@@ -7,6 +7,7 @@
 
 #include "copyright.h"
 #include "system.h"
+#include "threadmanager.h"
 
 // This defines *all* of the global data structures used by Nachos.
 // These are all initialized and de-allocated by this file.
@@ -51,7 +52,7 @@ extern void Cleanup();
 // TimerInterruptHandler
 // 	Interrupt handler for the timer device.  The timer device is
 //	set up to interrupt the CPU periodically (once every TimerTicks).
-//	This routine is called each time there is a timer interrupt,
+//	This routine is called each time when there is a timer interrupt,
 //	with interrupts disabled.
 //
 //	Note that instead of calling Yield() directly (which would
@@ -67,8 +68,26 @@ extern void Cleanup();
 static void
 TimerInterruptHandler(int dummy)
 {
+//=================================================
+
+    int value;
+
+    value = currentThread -> getCurrentTimePeriod();
+    if(value > 0)
+    {
+        currentThread -> setCurrentTimePeriod( (value - 10) / 10 );
+        return;
+    }
+
+    value = currentThread -> getBaseTimePeriod();
+    currentThread -> setCurrentTimePeriod(value / 10);
+
+//=================================================
+
     if (interrupt->getStatus() != IdleMode)
 	interrupt->YieldOnReturn();
+    
+    //printf("Time Interrupt!!!\n");
 }
 
 //----------------------------------------------------------------------
@@ -145,9 +164,19 @@ Initialize(int argc, char **argv)
     stats = new Statistics();			// collect statistics
     interrupt = new Interrupt;			// start up interrupt handling
     scheduler = new Scheduler();		// initialize the ready queue
-    if (randomYield)				// start the timer (if needed)
-	timer = new Timer(TimerInterruptHandler, 0, randomYield);
+    
+    //if(randomYield)				// start the timer (if needed)
+    //   timer = new Timer(TimerInterruptHandler, 0, randomYield);
 
+//========================================================
+//currently, there isn't a real timer, this is the first thing we need to change
+
+    //timer = new Timer(TimerInterruptHandler, 0, FALSE);
+
+//========================================================
+
+
+    
     threadToBeDestroyed = NULL;
 
     // We didn't explicitly allocate the current thread we are running in.
@@ -157,7 +186,7 @@ Initialize(int argc, char **argv)
     currentThread->setStatus(RUNNING);
 //============================================
     
-    currentThread -> setPriority(10);
+    currentThread -> setPriority(5);
     threadmanager -> addThread(currentThread);
 
 //============================================

@@ -11,6 +11,7 @@
 
 #include "list.h"
 #include "thread.h"
+#include "synch.h"
 
 class ThreadManager
 {
@@ -18,7 +19,8 @@ class ThreadManager
       private:
               int threadNumber;                    //record the totoal number of the threads
               int threadIndex;          //being used when we product a threadID
-              List *threadList;
+              List * threadList;
+              Lock * mutex;          //the threadmanager.h and the synch.h has include each other!!! 
 
       public:
               ThreadManager();

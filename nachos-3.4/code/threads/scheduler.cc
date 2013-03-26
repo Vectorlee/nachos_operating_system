@@ -56,14 +56,16 @@ Scheduler::ReadyToRun (Thread *thread)
     DEBUG('t', "Putting thread %s on ready list.\n", thread->getName());
 
     thread->setStatus(READY);
-    //readyList->Append((void *)thread);  
-
+        
+    //readyList -> Append((void *)thread);  
 //=================================================
-    
+
     readyList -> SortedInsert((void *)thread, thread->getPriority()); 
 
     if(thread -> getPriority() < currentThread -> getPriority())     
-    {// a < b means that a is prior than b     
+    {// a < b means that a is prior than b
+         
+         printf("Thread %d grub the CPU of thread %d\n", thread -> getID(), currentThread -> getID());     
          currentThread -> Yield();
     }
 
