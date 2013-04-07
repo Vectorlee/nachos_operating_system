@@ -95,4 +95,29 @@ SynchList::Mapcar(VoidFunctionPtr func)
     lock->Acquire(); 
     list->Mapcar(func);
     lock->Release(); 
+
 }
+
+//==========================================================
+
+bool
+SynchList::isEmpty()
+{
+    return list -> IsEmpty();
+
+}
+
+
+int 
+SynchList::totalNumber()
+{
+    int num;
+
+    lock->Acquire();
+    num = list -> totalNumber();
+    lock->Release(); 
+
+    return num;
+
+}
+//==========================================================

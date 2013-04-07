@@ -12,9 +12,10 @@
 #include "copyright.h"
 #include "system.h"
 #include "synch.h"
+//#include "messagequeue.h"
 
 // testnum is set in main.cc
-int testnum = 3;
+int testnum = 4;
 
 
 #define MaxAmount 11
@@ -45,6 +46,7 @@ SimpleThread(int which)
     for (num = 0; num < 10; num++) {
 	printf("*** thread %d looped %d times\n", which, num);
         currentThread -> Clock();
+        //currentThread -> Yield(); 
     }
 }
 
@@ -65,7 +67,11 @@ ThreadTest1()
     SimpleThread(0);
 }
 
-//======================================================
+//----------------------------------------------------------------------
+// ThreadTest2
+// 	Set up several threads with different pirorities and time periods
+//      test the running result
+//----------------------------------------------------------------------
 void
 ThreadTest2()
 {
@@ -105,6 +111,10 @@ void remove_item()
      printf("thread %d remove item, items: %d\n", currentThread -> getID(), buffer);
 }
 
+//----------------------------------------------------
+// 
+//      Synchronous implemented by P, V operation
+//----------------------------------------------------
 
 void producer1(int dummy)
 { 
@@ -132,7 +142,10 @@ void consumer1(int dummy)
 
 }
 
-//============================================//
+//----------------------------------------------------
+// 
+//      Synchronous implemented by condition variable
+//----------------------------------------------------
 
 void producer2(int dummy)
 { 
@@ -176,7 +189,10 @@ void consumer2(int dummy)
 
 }
 
-
+//----------------------------------------------------
+//    Test the result of the synchronous of threads
+//      
+//----------------------------------------------------
 
 void
 ThreadTest3()
@@ -209,6 +225,93 @@ ThreadTest3()
     }
 }
 
+
+void 
+send(int dummy)
+{
+     key_t ipckey;
+     int mq_id, flag;
+     
+     struct{ 
+        long type; 
+        char text[30]; 
+     } mymsg;
+
+     ipckey = messagequeue -> ftok("MSG_FILE", 42);  //this two argument is predefined
+
+     ASSERT(ipckey != -1);
+
+     mq_id = messagequeue -> msgget(ipckey, IPC_CREATE);
+
+     ASSERT(mq_id != -1);
+
+     printf("the address message queue 1 %d\n", mq_id);
+     
+     strcpy(mymsg.text, "Hello, world!");
+
+     while(true)
+     {
+         mymsg.type = Random() % 5;
+         flag = Random() % 3;         
+ 
+         int result = messagequeue -> msgsnd(mq_id, &mymsg, sizeof(mymsg), flag); 
+
+         printf("thread: %d send message with type %d, result: %d\n", currentThread -> getID(), mymsg.type, result);
+
+         currentThread -> Yield(); 
+     }
+}
+
+void 
+receive(int dummy)
+{
+     key_t ipckey;
+     int mq_id, flag, type;
+
+     struct{ 
+        long type; 
+        char text[30]; 
+     } mymsg;
+
+     ipckey = messagequeue -> ftok("MSG_FILE", 42);
+
+     ASSERT(ipckey != -1);
+
+     mq_id = messagequeue -> msgget(ipckey, IPC_CREATE);
+
+     ASSERT(mq_id != -1);
+
+     printf("the address message queue 2 %d\n", mq_id);
+
+
+     while(true)
+     {
+         type = Random() % 5;
+         flag = Random() % 3;         
+ 
+         int result = messagequeue -> msgrcv(mq_id, &mymsg, sizeof(mymsg), type, flag); 
+
+         printf("thread: %d receive message with type %d, result: %d\n", currentThread -> getID(), type, result); 
+         
+         if(result != -1)
+              printf("message: %s\n", mymsg.text);                       
+
+         currentThread -> Yield();
+     }
+}
+
+void 
+ThreadTest4()
+{
+
+    Thread *t1 = new Thread("send thread");
+    t1 -> Fork(send, t1 -> getID());
+
+    Thread *t2 = new Thread("receive thread");
+    t2 -> Fork(receive, t2 -> getID());
+
+}
+
 //======================================================
 
 //----------------------------------------------------------------------
@@ -220,14 +323,17 @@ void
 ThreadTest()
 {
     switch (testnum) {
-    case 1:
-	ThreadTest1();
+    case 1:              
+	ThreadTest1();          //primary thread
 	break;
     case 2:
-        ThreadTest2();
+        ThreadTest2();          //thread with priority
         break;
     case 3:
-        ThreadTest3();
+        ThreadTest3();          //thread with synchronous 
+        break;
+    case 4:
+        ThreadTest4();
         break; 
     default:
 	printf("No test specified.\n");

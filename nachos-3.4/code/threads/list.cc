@@ -140,10 +140,12 @@ List::Remove()
 void
 List::Mapcar(VoidFunctionPtr func)
 {
+
     for (ListElement *ptr = first; ptr != NULL; ptr = ptr->next) {
        DEBUG('l', "In mapcar, about to invoke %x(%x)\n", func, ptr->item);
        (*func)((int)ptr->item);
     }
+
 }
 
 //----------------------------------------------------------------------
@@ -245,17 +247,41 @@ List::removeItem(int id)
  
     if (IsEmpty()) {	// if list is empty, put
         return;
-    } else if (id < first->key) {	
+    } else if (id < first -> key) {	
 	return;
-    } else {		// look for first elt in list bigger than item
+    } else if (id == first -> key){
+        first = first -> next;
+        return;
+    }
+    else {		// look for first elt in list bigger than item
         for (ptr = first; ptr->next != NULL; ptr = ptr->next) {
-            if (id == ptr->next->key) {
-                temp = ptr->next;
-		ptr->next = temp->next;
+            if (id == (ptr -> next) -> key) {
+
+                if(last == ptr -> next)
+                    last = ptr; 
+
+                temp = ptr -> next;
+		ptr -> next = temp -> next;
                 //delete temp; 
+
 		return;
 	    }
 	}
     }
+}
+
+int
+List::totalNumber()
+{
+
+     int number = 0;
+     ListElement *ptr;
+
+     for(ptr = first; ptr != NULL; ptr = ptr->next)
+     {
+           number++;
+     }
+
+     return number;
 }
 //==============================================

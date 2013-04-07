@@ -33,10 +33,18 @@ class SynchList {
 				// apply function to every item in the list
     void Mapcar(VoidFunctionPtr func);
 
+//=============================================
+
+    bool isEmpty();
+    int  totalNumber();
+
+//=============================================
+
+
   private:
     List *list;			// the unsynchronized list
-    Lock *lock;			// enforce mutual exclusive access to the list
-    Condition *listEmpty;	// wait in Remove if the list is empty
+    class Lock *lock;			// enforce mutual exclusive access to the list
+    class Condition *listEmpty;	// wait in Remove if the list is empty
 };
 
 #endif // SYNCHLIST_H

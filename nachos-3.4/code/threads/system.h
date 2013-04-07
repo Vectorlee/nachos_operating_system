@@ -17,6 +17,7 @@
 #include "timer.h"
 #include "list.h"
 #include "threadmanager.h"
+#include "messagequeue.h"
 
 // Initialization and cleanup routines
 extern void Initialize(int argc, char **argv); 	// Initialization,
@@ -35,6 +36,7 @@ extern Timer *timer;				// the hardware alarm clock
 //============================================
 
 extern ThreadManager *threadmanager;
+extern MessageQueue *messagequeue;
 
 //============================================
 

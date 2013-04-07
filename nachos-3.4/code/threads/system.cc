@@ -24,6 +24,7 @@ Timer *timer;				// the hardware timer device,
 //=================================================
 
 ThreadManager *threadmanager;
+MessageQueue *messagequeue;   
 
 //=================================================
 
@@ -157,7 +158,8 @@ Initialize(int argc, char **argv)
 
 //==============================================
     threadmanager = new ThreadManager();
-      
+    messagequeue = new MessageQueue();    
+  
 //==============================================
 
     DebugInit(debugArgs);			// initialize DEBUG messages
