@@ -16,7 +16,30 @@
 #include "mipssim.h"
 #include "system.h"
 
+
+#define TimeRange 50
+
 static void Mult(int a, int b, bool signedArith, int* hiPtr, int* loPtr);
+
+static void FlushPages()
+{
+     int size = machine -> pageTableSize;
+     TranslationEntry * entry;     
+
+     for(int i = 0; i < size; i++)
+     {
+         entry = &(machine -> pageTable[i]);     // scan the page table entry
+         if( entry -> valid && entry -> use) 
+         {
+             entry -> clockCount++;              // increase the clock count in page entry    
+             if(entry -> clockCount == TimeRange)
+             {
+                entry -> clockCount = 0;         // if it reach the TimeRange
+                entry -> use = FALSE;            // clean the use bit 
+             } 
+         }
+     }
+}
 
 //----------------------------------------------------------------------
 // Machine::Run
@@ -38,6 +61,8 @@ Machine::Run()
     interrupt->setStatus(UserMode);
     for (;;) {
         OneInstruction(instr);
+        FlushPages();
+
 	interrupt->OneTick();
 	if (singleStep && (runUntilTime <= stats->totalTicks))
 	  Debugger();
@@ -100,7 +125,11 @@ Machine::OneInstruction(Instruction *instr)
 
     // Fetch instruction 
     if (!machine->ReadMem(registers[PCReg], 4, &raw))
-	return;			// exception occurred
+    { 
+         return;		 	// exception occurred   pagefault
+    }
+
+
     instr->value = raw;
     instr->Decode();
 

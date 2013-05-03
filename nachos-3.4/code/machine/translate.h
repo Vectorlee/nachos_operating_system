@@ -40,6 +40,9 @@ class TranslationEntry {
 			// page is referenced or modified.
     bool dirty;         // This bit is set by the hardware every time the
 			// page is modified.
+
+    int clockCount;     // count the time of the page since it is loaded.
+
 };
 
 #endif

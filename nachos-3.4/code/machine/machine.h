@@ -32,8 +32,10 @@
 					// the disk sector size, for
 					// simplicity
 
-#define NumPhysPages    32
-#define MemorySize 	(NumPhysPages * PageSize)
+//#define NumPhysPages    32
+#define NumPhysPages    128             //we change the physical size a bit more bigger
+
+#define MemorySize 	(NumPhysPages * PageSize)           // 128 * 128
 #define TLBSize		4		// if there is a TLB, make it small
 
 enum ExceptionType { NoException,           // Everything ok!
@@ -142,6 +144,10 @@ class Machine {
     void RaiseException(ExceptionType which, int badVAddr);
 				// Trap to the Nachos kernel, because of a
 				// system call or other exception.  
+
+    //void TLBMissHandler();      // When a TLB Miss happened, we should change the  
+                                // content of the TLB, based on some algorithm 
+
 
     void Debugger();		// invoke the user program debugger
     void DumpState();		// print the user CPU and memory state 

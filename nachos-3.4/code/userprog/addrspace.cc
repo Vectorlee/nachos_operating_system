@@ -18,7 +18,6 @@
 #include "copyright.h"
 #include "system.h"
 #include "addrspace.h"
-#include "noff.h"
 #ifdef HOST_SPARC
 #include <strings.h>
 #endif
@@ -30,7 +29,7 @@
 //	endian machine, and we're now running on a big endian machine.
 //----------------------------------------------------------------------
 
-static void 
+void 
 SwapHeader (NoffHeader *noffH)
 {
 	noffH->noffMagic = WordToHost(noffH->noffMagic);
@@ -60,24 +59,38 @@ SwapHeader (NoffHeader *noffH)
 //	"executable" is the file containing the object code to load into memory
 //----------------------------------------------------------------------
 
+//----------------------------------------------------------------------
+//  three parts have been modified: 
+//
+//    1. the pagetable initialization, physical page number is -1, valid is FALSE
+//    2. don't clean the physical memory when we open a program the  
+//    3. don't load the code and data into the memory.
+//
+//----------------------------------------------------------------------
+
 AddrSpace::AddrSpace(OpenFile *executable)
 {
     NoffHeader noffH;
     unsigned int i, size;
 
     executable->ReadAt((char *)&noffH, sizeof(noffH), 0);
-    if ((noffH.noffMagic != NOFFMAGIC) && 
-		(WordToHost(noffH.noffMagic) == NOFFMAGIC))
-    	SwapHeader(&noffH);
+    
+    if ((noffH.noffMagic != NOFFMAGIC) && (WordToHost(noffH.noffMagic) == NOFFMAGIC))
+    	SwapHeader(&noffH); 
+
     ASSERT(noffH.noffMagic == NOFFMAGIC);
 
-// how big is address space?
+    // how big is address space
     size = noffH.code.size + noffH.initData.size + noffH.uninitData.size 
 			+ UserStackSize;	// we need to increase the size
 						// to leave room for the stack
-    numPages = divRoundUp(size, PageSize);
+    
+    numPages = divRoundUp(size, PageSize);      // PageSize = SectorSize in machine.h    
+                                                // SectorSize = 128      in disk.h
+
     size = numPages * PageSize;
 
+                                                // NumPhysPages = 32    in machine.h now it is 128
     ASSERT(numPages <= NumPhysPages);		// check we're not trying
 						// to run anything too big --
 						// at least until we have
@@ -86,26 +99,47 @@ AddrSpace::AddrSpace(OpenFile *executable)
     DEBUG('a', "Initializing address space, num pages %d, size %d\n", 
 					numPages, size);
 // first, set up the translation 
-    pageTable = new TranslationEntry[numPages];
+    pageTable = new TranslationEntry[numPages];     //TranslationEntry  in translate.h
+                                                    //the number of TranslationEntry is numPages
+ 
     for (i = 0; i < numPages; i++) {
 	pageTable[i].virtualPage = i;	// for now, virtual page # = phys page #
-	pageTable[i].physicalPage = i;
-	pageTable[i].valid = TRUE;
-	pageTable[i].use = FALSE;
+	
+        //pageTable[i].physicalPage = i;
+        pageTable[i].physicalPage = -1;  // physical page number is unknown now. we assign it as -1	
+
+        //pageTable[i].valid = TRUE;
+	pageTable[i].valid = FALSE;      // currently, every page entry is invalid
+
+        pageTable[i].use = FALSE;
 	pageTable[i].dirty = FALSE;
 	pageTable[i].readOnly = FALSE;  // if the code segment was entirely on 
 					// a separate page, we could set its 
 					// pages to be read-only
+        pageTable[i].clockCount = 0;    // just loaded 
     }
-    
+
+
 // zero out the entire address space, to zero the unitialized data segment 
 // and the stack segment
-    bzero(machine->mainMemory, size);
+
+    //bzero(machine->mainMemory, size); 
+    
+    // we can cancel this statment here, for we can't clean 
+    // the whole memory space when we load a program
+
 
 // then, copy in the code and data segments into memory
+
+// we don't copy the code and data segments into the memory. 
+// we implement a lazy_loading, when a pagefault occur, we load a page
+
+
+/*
     if (noffH.code.size > 0) {
         DEBUG('a', "Initializing code segment, at 0x%x, size %d\n", 
 			noffH.code.virtualAddr, noffH.code.size);
+
         executable->ReadAt(&(machine->mainMemory[noffH.code.virtualAddr]),
 			noffH.code.size, noffH.code.inFileAddr);
     }
@@ -115,6 +149,8 @@ AddrSpace::AddrSpace(OpenFile *executable)
         executable->ReadAt(&(machine->mainMemory[noffH.initData.virtualAddr]),
 			noffH.initData.size, noffH.initData.inFileAddr);
     }
+*/
+
 
 }
 
@@ -156,7 +192,7 @@ AddrSpace::InitRegisters()
    // Set the stack register to the end of the address space, where we
    // allocated the stack; but subtract off a bit, to make sure we don't
    // accidentally reference off the end!
-    machine->WriteRegister(StackReg, numPages * PageSize - 16);
+    machine->WriteRegister(StackReg, numPages * PageSize - 16);      //the end of the address space, downward
     DEBUG('a', "Initializing stack register to %d\n", numPages * PageSize - 16);
 }
 
@@ -168,7 +204,7 @@ AddrSpace::InitRegisters()
 //	For now, nothing!
 //----------------------------------------------------------------------
 
-void AddrSpace::SaveState() 
+void AddrSpace::SaveState()    
 {}
 
 //----------------------------------------------------------------------

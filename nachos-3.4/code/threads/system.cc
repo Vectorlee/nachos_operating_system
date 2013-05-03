@@ -38,6 +38,9 @@ SynchDisk   *synchDisk;
 
 #ifdef USER_PROGRAM	// requires either FILESYS or FILESYS_STUB
 Machine *machine;	// user program memory and registers
+
+MemoryManager *memorymanager;
+
 #endif
 
 #ifdef NETWORK
@@ -47,7 +50,29 @@ PostOffice *postOffice;
 
 // External definition, to allow us to take a pointer to this function
 extern void Cleanup();
+extern void StartProcess(char *file);
 
+//----------------------------------------------------------------------
+//runProgram
+//
+//    The create function for the user program 
+//    we define it as a VoidFunctionPtr function
+//
+//    int arg will be used as a char*, to a filename 
+//----------------------------------------------------------------------
+
+
+#ifdef USER_PROGRAM
+void 
+runProgram(int arg)
+{
+     char *filename;
+     filename = (char*)arg;
+
+     StartProcess(filename);
+}
+
+#endif
 
 //----------------------------------------------------------------------
 // TimerInterruptHandler
@@ -70,7 +95,7 @@ static void
 TimerInterruptHandler(int dummy)
 {
 //=================================================
-
+/*
     int value;
 
     value = currentThread -> getCurrentTimePeriod();
@@ -82,13 +107,14 @@ TimerInterruptHandler(int dummy)
 
     value = currentThread -> getBaseTimePeriod();
     currentThread -> setCurrentTimePeriod(value / 10);
-
+*/
 //=================================================
+
+    //printf("Time interrput!!!\n");
 
     if (interrupt->getStatus() != IdleMode)
 	interrupt->YieldOnReturn();
-    
-    //printf("Time Interrupt!!!\n");
+
 }
 
 //----------------------------------------------------------------------
@@ -171,9 +197,8 @@ Initialize(int argc, char **argv)
     //   timer = new Timer(TimerInterruptHandler, 0, randomYield);
 
 //========================================================
-//currently, there isn't a real timer, this is the first thing we need to change
 
-    //timer = new Timer(TimerInterruptHandler, 0, FALSE);
+    timer = new Timer(TimerInterruptHandler, 0, FALSE);  //deploy the timer
 
 //========================================================
 
@@ -197,6 +222,9 @@ Initialize(int argc, char **argv)
     
 #ifdef USER_PROGRAM
     machine = new Machine(debugUserProg);	// this must come first
+
+    memorymanager = new MemoryManager();        // initialize the memory manager
+
 #endif
 
 #ifdef FILESYS

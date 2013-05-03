@@ -64,6 +64,7 @@ extern void Print(char *file), PerformanceTest(void);
 extern void StartProcess(char *file), ConsoleTest(char *in, char *out);
 extern void MailTest(int networkID);
 
+
 //----------------------------------------------------------------------
 // main
 // 	Bootstrap the operating system kernel.  
@@ -111,7 +112,11 @@ main(int argc, char **argv)
 #ifdef USER_PROGRAM
         if (!strcmp(*argv, "-x")) {        	// run a user program
 	    ASSERT(argc > 1);
-            StartProcess(*(argv + 1));
+
+            Thread *pthread = new Thread(*(argv + 1)); 
+            pthread -> Fork(runProgram, int(*(argv + 1)));  //create a new thread
+
+            //StartProcess(*(argv + 1));            
             argCount = 2;
         } else if (!strcmp(*argv, "-c")) {      // test the console
 	    if (argc == 1)
@@ -126,6 +131,8 @@ main(int argc, char **argv)
 					// for console input
 	}
 #endif // USER_PROGRAM
+
+
 #ifdef FILESYS
 	if (!strcmp(*argv, "-cp")) { 		// copy from UNIX to Nachos
 	    ASSERT(argc > 2);

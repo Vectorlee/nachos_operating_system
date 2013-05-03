@@ -16,8 +16,10 @@
 #include "stats.h"
 #include "timer.h"
 #include "list.h"
+
 #include "threadmanager.h"
 #include "messagequeue.h"
+
 
 // Initialization and cleanup routines
 extern void Initialize(int argc, char **argv); 	// Initialization,
@@ -42,8 +44,16 @@ extern MessageQueue *messagequeue;
 
 #ifdef USER_PROGRAM
 #include "machine.h"
+#include "memmgr.h"
+
 extern Machine* machine;	// user program memory and registers
+
+extern MemoryManager* memorymanager;  // memory manager to implement virtual memory
+
+void runProgram(int arg);
+
 #endif
+
 
 #ifdef FILESYS_NEEDED 		// FILESYS or FILESYS_STUB 
 #include "filesys.h"

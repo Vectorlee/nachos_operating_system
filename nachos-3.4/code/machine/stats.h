@@ -33,6 +33,10 @@ class Statistics {
     int numConsoleCharsRead;	// number of characters read from the keyboard
     int numConsoleCharsWritten; // number of characters written to the display
     int numPageFaults;		// number of virtual memory page faults
+    
+    int numPageSwap;            // number of virtual memory page been swap down 
+    int numWriteBack;           // number of virtual memory page been write back
+
     int numPacketsSent;		// number of packets sent over the network
     int numPacketsRecvd;	// number of packets received over the network
 
@@ -55,6 +59,14 @@ class Statistics {
 #define SeekTime 	500    	// time disk takes to seek past one track
 #define ConsoleTime 	100	// time to read or write one character
 #define NetworkTime 	100   	// time to send or receive one packet
-#define TimerTicks 	100    	// (average) time between timer interrupts
+
+#define TimerTicks 	100    	// (average) time between timer interrupts  
+
+//=============================================
+//#define TimerTicks      10      // there are always time interrupt in the system
+                                  // but we will use the time period of a thread
+                                  // to decide whether to yield it or not
+
+//=============================================
 
 #endif // STATS_H

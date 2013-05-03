@@ -83,7 +83,7 @@ BitMap::Test(int which)
 }
 
 //----------------------------------------------------------------------
-// BitMap::Find
+// BitMap::Find 
 // 	Return the number of the first bit which is clear.
 //	As a side effect, set the bit (mark it as in use).
 //	(In other words, find and allocate a bit.)
@@ -96,11 +96,33 @@ BitMap::Find()
 {
     for (int i = 0; i < numBits; i++)
 	if (!Test(i)) {
-	    Mark(i);
-	    return i;
+	    Mark(i);            //we change this function, don't Mark it as used
+	    
+            return i;
 	}
     return -1;
 }
+
+//----------------------------------------------------------------------
+// BitMap::pureFind
+// 	Return the number of the first bit which is clear.
+//      It is a pure find function, without side affect
+//
+//	If no bits are clear, return -1.
+//----------------------------------------------------------------------
+
+int 
+BitMap::pureFind() 
+{
+    for (int i = 0; i < numBits; i++)
+	if (!Test(i)) {
+	    //Mark(i);            //we change this function, don't Mark it as used
+	    
+            return i;
+	}
+    return -1;
+}
+
 
 //----------------------------------------------------------------------
 // BitMap::NumClear

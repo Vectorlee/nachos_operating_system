@@ -25,6 +25,34 @@
 #include "system.h"
 #include "syscall.h"
 
+//---------------------------------------------------------------------
+//
+//
+//
+//---------------------------------------------------------------------
+
+int 
+getMemoryAddr(int vaddr, int size)
+{
+     int physicalAddress;
+
+     ExceptionType exception = machine -> Translate(vaddr, &physicalAddress, size, FALSE);     
+  
+     if(exception != NoException) {
+
+        machine -> registers[BadVAddrReg] = vaddr;	
+        memorymanager -> loadPage(); 
+        exception = machine -> Translate(vaddr, &physicalAddress, size, FALSE);
+
+        ASSERT(exception == NoException);
+    }
+
+    return physicalAddress; 
+
+}
+
+
+
 //----------------------------------------------------------------------
 // ExceptionHandler
 // 	Entry point into the Nachos kernel.  Called when a user program
@@ -51,12 +79,56 @@
 void
 ExceptionHandler(ExceptionType which)
 {
-    int type = machine->ReadRegister(2);
 
-    if ((which == SyscallException) && (type == SC_Halt)) {
-	DEBUG('a', "Shutdown, initiated by user program.\n");
-   	interrupt->Halt();
-    } else {
+    int type = machine->ReadRegister(2);
+    int address;
+
+    if ((which == SyscallException) && (type == SC_Print)) {
+
+        machine -> registers[PCReg] = machine -> registers[NextPCReg];
+        machine -> registers[NextPCReg] += 4;
+        
+        if((machine -> registers[4]) == 1)   //string
+        {
+            address = getMemoryAddr((machine -> registers[5]), 4);
+            printf("%s", machine -> mainMemory + address);
+        }
+        else if((machine -> registers[4]) == 2)   //int 
+        {
+            printf("%d", (machine -> registers[5]));
+        }
+        else
+            ASSERT(FALSE);
+
+    }
+    else if ((which == SyscallException) && (type == SC_Halt)) {
+
+        DEBUG('a', "Shutdown, initiated by user program.\n");
+   	
+        printf("invoke a halt system call\n");
+
+        machine -> registers[PCReg] = machine -> registers[NextPCReg];
+        machine -> registers[NextPCReg] += 4;
+
+        interrupt->Halt();
+    }
+    else if((which == SyscallException) && (type == SC_Exit)){
+        
+        printf("invoke a exit system call\n");
+ 
+        machine -> registers[PCReg] = machine -> registers[NextPCReg];
+        machine -> registers[NextPCReg] += 4; 
+
+        currentThread -> Finish();
+
+    } 
+    else if(which == PageFaultException){
+
+        //printf("occured a PageFault\n");
+        memorymanager -> loadPage();
+    
+    }
+    else {
 	printf("Unexpected user mode exception %d %d\n", which, type);
 	ASSERT(FALSE);
     }

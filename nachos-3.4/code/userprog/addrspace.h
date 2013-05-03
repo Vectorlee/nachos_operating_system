@@ -15,8 +15,14 @@
 
 #include "copyright.h"
 #include "filesys.h"
+#include "noff.h"
 
-#define UserStackSize		1024 	// increase this as necessary!
+
+//#define UserStackSize		1024 	// increase this as necessary!
+#define UserStackSize         2048
+
+void SwapHeader(NoffHeader *noffH);
+
 
 class AddrSpace {
   public:
@@ -30,6 +36,9 @@ class AddrSpace {
 
     void SaveState();			// Save/restore address space-specific
     void RestoreState();		// info on a context switch 
+
+    unsigned int getNumPage() { return numPages; }
+                                        // return the number of pages  
 
   private:
     TranslationEntry *pageTable;	// Assume linear page table translation

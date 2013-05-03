@@ -45,8 +45,11 @@ class BitMap {
 				// If no bits are clear, return -1.
     int NumClear();		// Return the number of clear bits
 
+
+    int pureFind();             // Return the # of a clear bit
+
     void Print();		// Print contents of bitmap
-    
+
     // These aren't needed until FILESYS, when we will need to read and 
     // write the bitmap to a file
     void FetchFrom(OpenFile *file); 	// fetch contents from disk 
