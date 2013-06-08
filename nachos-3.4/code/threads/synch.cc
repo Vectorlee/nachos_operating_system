@@ -124,13 +124,14 @@ void
 Lock::Acquire() 
 {
     IntStatus oldLevel = interrupt->SetLevel(IntOff);	// disable interrupts
-    
+
     while(status == BUSY) {                        //the lock is not avaliable 
-        
 	queue->Append((void *)currentThread);	// so go to sleep
         currentThread->Sleep();
     }
- 
+
+    ASSERT(status == FREE);   
+
     status = BUSY;					
     heldThread = currentThread;
 

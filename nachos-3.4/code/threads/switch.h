@@ -128,23 +128,23 @@
 #ifdef HOST_i386
 
 /* the offsets of the registers from the beginning of the thread object */
-#define _ESP     0
-#define _EAX     4
-#define _EBX     8
-#define _ECX     12
-#define _EDX     16
-#define _EBP     20
-#define _ESI     24
-#define _EDI     28
-#define _PC      32
+#define _ESP     0           //0
+#define _EAX     4           //1
+#define _EBX     8           //2
+#define _ECX     12          //3
+#define _EDX     16          //4
+#define _EBP     20          //5  
+#define _ESI     24          //6
+#define _EDI     28          //7
+#define _PC      32          //8
 
 /* These definitions are used in Thread::AllocateStack(). */
-#define PCState         (_PC/4-1)
-#define FPState         (_EBP/4-1)
-#define InitialPCState  (_ESI/4-1)
-#define InitialArgState (_EDX/4-1)
-#define WhenDonePCState (_EDI/4-1)
-#define StartupPCState  (_ECX/4-1)
+#define PCState         (_PC/4-1)       //7
+#define FPState         (_EBP/4-1)      //4
+#define InitialPCState  (_ESI/4-1)      //5 
+#define InitialArgState (_EDX/4-1)      //3 
+#define WhenDonePCState (_EDI/4-1)      //6
+#define StartupPCState  (_ECX/4-1)      //2
 
 #define InitialPC       %esi
 #define InitialArg      %edx

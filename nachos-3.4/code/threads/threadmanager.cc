@@ -20,7 +20,7 @@ printStatus(int num)
      Thread *currentThread =  (Thread*) num;
      int status = currentThread -> getStatus();  
      
-     printf("name: %s\tTID: %d\tstatus: ", currentThread -> getName(), currentThread -> getID());
+     printf("name: %s\t\tTID: %d\t\tstatus: ", currentThread -> getName(), currentThread -> getID());
      //enum ThreadStatus { JUST_CREATED, RUNNING, READY, BLOCKED };
      switch(status)
      {
@@ -76,6 +76,13 @@ ThreadManager::threadStatus()      // 'TS' output the status of all the threads
 					// on the list      
 } 
 
+Thread* 
+ThreadManager::returnThread(int ID)
+{
+    return (Thread*)(threadList -> returnItem(ID));
+}
+
+
 void 
 ThreadManager::addThread(Thread *newThread)         // add a thread into the list when a thread is forked
 {
@@ -89,13 +96,13 @@ ThreadManager::addThread(Thread *newThread)         // add a thread into the lis
 
 void 
 ThreadManager::removeThread(int ID)      // remove a thread from the list when the thread is finished 
-{
-
+{ 
+  
     mutex -> Acquire();
-    
+
     threadList -> removeItem(ID);
     threadNumber--;
 
-    mutex -> Acquire();
+    mutex -> Release();
 }
 

@@ -18,6 +18,8 @@
 #include "copyright.h"
 #include "system.h"
 #include "addrspace.h"
+#include "filesys.h"
+
 #ifdef HOST_SPARC
 #include <strings.h>
 #endif

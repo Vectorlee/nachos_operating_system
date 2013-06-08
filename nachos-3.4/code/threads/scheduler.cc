@@ -55,8 +55,7 @@ Scheduler::ReadyToRun (Thread *thread)
 {
     DEBUG('t', "Putting thread %s on ready list.\n", thread->getName());
 
-    thread->setStatus(READY);
-        
+    thread->setStatus(READY);        
     //readyList -> Append((void *)thread);  
 //=================================================
 
@@ -65,7 +64,9 @@ Scheduler::ReadyToRun (Thread *thread)
     if(thread -> getPriority() < currentThread -> getPriority())     
     {// a < b means that a is prior than b
          
-         printf("Thread %d grub the CPU of thread %d\n", thread -> getID(), currentThread -> getID());     
+         printf("[+] Thread %d grub the CPU of thread %d\n", thread -> getID(), currentThread -> getID());
+         //printf("Thread %d, priority: %d\n", thread -> getID(), thread -> getPriority());
+         //printf("Thread %d, priority: %d\n", currentThread -> getID(), currentThread -> getPriority());     
          currentThread -> Yield();
     }
 
@@ -84,7 +85,27 @@ Scheduler::ReadyToRun (Thread *thread)
 Thread *
 Scheduler::FindNextToRun ()
 {
+
+#ifdef USER_PROGRAM
+
+    Thread *pthread = (Thread *)readyList -> Remove(); 
+    if(pthread == NULL)
+        return NULL;
+
+    while(pthread -> killed)    //if the thread is marked as killed, the thread should be killed.
+    { 
+        threadToBeDestroyed -> Append(pthread);
+
+        ReadyToRun(pthread -> getJoinedThread());
+        pthread = (Thread *)readyList -> Remove(); 
+    }
+
+    return pthread;
+#else
+
     return (Thread *)readyList->Remove();
+#endif
+
 }
 
 //----------------------------------------------------------------------
@@ -130,14 +151,19 @@ Scheduler::Run (Thread *nextThread)
     
     DEBUG('t', "Now in thread \"%s\"\n", currentThread->getName());
 
+
     // If the old thread gave up the processor because it was finishing,
     // we need to delete its carcass.  Note we cannot delete the thread
     // before now (for example, in Thread::Finish()), because up to this
     // point, we were still running on the old thread's stack!
     
-    if (threadToBeDestroyed != NULL) {
-        delete threadToBeDestroyed;
-	threadToBeDestroyed = NULL;
+    while (!threadToBeDestroyed -> IsEmpty()) {
+        //printf("sssssss\n");
+
+        Thread *pthread = (Thread *)threadToBeDestroyed -> Remove();
+        delete pthread; 
+        //delete threadToBeDestroyed;
+	//threadToBeDestroyed = NULL;
     }
     
 #ifdef USER_PROGRAM
@@ -159,3 +185,4 @@ Scheduler::Print()
     printf("Ready list contents:\n");
     readyList->Mapcar((VoidFunctionPtr) ThreadPrint);
 }
+

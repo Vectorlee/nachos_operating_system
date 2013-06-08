@@ -60,6 +60,9 @@ Machine::Run()
 	       currentThread->getName(), stats->totalTicks);
     interrupt->setStatus(UserMode);
     for (;;) {
+
+        //printf("&&&&&&&&&&&&&&s\n");
+
         OneInstruction(instr);
         FlushPages();
 
@@ -125,7 +128,8 @@ Machine::OneInstruction(Instruction *instr)
 
     // Fetch instruction 
     if (!machine->ReadMem(registers[PCReg], 4, &raw))
-    { 
+    {
+         //printf("Read Memory occur a exception!!!\n");  
          return;		 	// exception occurred   pagefault
     }
 

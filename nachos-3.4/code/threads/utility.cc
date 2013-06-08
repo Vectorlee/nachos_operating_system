@@ -73,3 +73,82 @@ DEBUG(char flag, char *format, ...)
 	fflush(stdout);
     }
 }
+
+//---------------------------------------------------------------------
+// IntToStr
+//          Transfer the int value to a char string
+//
+//---------------------------------------------------------------------
+void 
+IntToStr(int value, char *buffer)
+{
+     int temp, left, i;
+
+     temp = value;
+     i = 0;
+
+     while(temp > 0)
+     {
+         left = temp % 10;
+         temp = temp / 10;  
+
+         buffer[i] = (char)(left + '0');
+         i++;
+     } 
+     buffer[i] = '\0';
+ 
+     return;
+}
+
+
+//--------------------------------------------------------------------
+//Basename
+//      The base name of a path
+//--------------------------------------------------------------------
+
+void BaseName(char *buffer, const char *path)
+{
+    int i, length = strlen(path);
+
+    for(i = length - 1; i >= 0; i--)
+    {
+        if(path[i] == '/')
+            break;
+    }
+
+    if(i == length - 1)
+       memset(buffer, 0, sizeof(buffer));
+    else
+       strcpy(buffer, path + i + 1);
+
+    return;
+}
+
+
+//--------------------------------------------------------------------
+//PathName
+//      The path name of a path
+//--------------------------------------------------------------------
+
+void PathName(char* buffer, const char *path)
+{
+    int i, length = strlen(path);
+
+    for(i = length - 1; i >= 0; i--)
+    {
+        if(path[i] == '/')
+            break;
+    }
+
+    if(i == -1)
+        memset(buffer, 0, sizeof(buffer));
+    else
+    {
+        strncpy(buffer, path, i + 1);
+        buffer[i + 1] = '\0';
+    }
+
+    return;
+}
+
+

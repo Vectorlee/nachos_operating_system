@@ -12,9 +12,13 @@
 
 #include "syscall.h"
 
+char hello[20] = "hello";
+
 int
 main()
 {
-    Halt();
+
+    Print(1, hello);
+    Halt();    
     /* not reached */
 }

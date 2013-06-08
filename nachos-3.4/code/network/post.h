@@ -87,7 +87,7 @@ class MailBox {
 				// mailbox (and wait if there is no message 
 				// to get!)
   private:
-    SynchList *messages;	// A mailbox is just a list of arrived messages
+    class SynchList *messages;	// A mailbox is just a list of arrived messages
 };
 
 // The following class defines a "Post Office", or a collection of 
@@ -133,9 +133,9 @@ class PostOffice {
     NetworkAddress netAddr;	// Network address of this machine
     MailBox *boxes;		// Table of mail boxes to hold incoming mail
     int numBoxes;		// Number of mail boxes
-    Semaphore *messageAvailable;// V'ed when message has arrived from network
-    Semaphore *messageSent;	// V'ed when next message can be sent to network
-    Lock *sendLock;		// Only one outgoing message at a time
+    class Semaphore *messageAvailable;// V'ed when message has arrived from network
+    class Semaphore *messageSent;	// V'ed when next message can be sent to network
+    class Lock *sendLock;		// Only one outgoing message at a time
 };
 
 #endif

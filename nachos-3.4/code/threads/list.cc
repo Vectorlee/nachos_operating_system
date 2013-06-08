@@ -240,18 +240,19 @@ List::SortedRemove(int *keyPtr)
 
 //=============================================
 
-void
+void*
 List::removeItem(int id)
 {
     ListElement *ptr, *temp;		// keep track
  
     if (IsEmpty()) {	// if list is empty, put
-        return;
+        return NULL;
     } else if (id < first -> key) {	
-	return;
+	return NULL;
     } else if (id == first -> key){
+        temp = first; 
         first = first -> next;
-        return;
+        return temp -> item;
     }
     else {		// look for first elt in list bigger than item
         for (ptr = first; ptr->next != NULL; ptr = ptr->next) {
@@ -262,13 +263,34 @@ List::removeItem(int id)
 
                 temp = ptr -> next;
 		ptr -> next = temp -> next;
-                //delete temp; 
-
-		return;
+                 
+		return temp -> item;
 	    }
 	}
     }
 }
+
+
+void* 
+List::returnItem(int id)
+{
+
+    ListElement *ptr;		// keep track
+ 
+    if (IsEmpty()) {	// if list is empty, put
+        return NULL;
+    }
+    else {		// look for first elt in list that have the same id
+        for (ptr = first; ptr != NULL; ptr = ptr->next) {
+            if (id == ptr -> key) {               
+		return ptr -> item;
+	    }
+	}
+    }
+
+    return NULL;
+}
+
 
 int
 List::totalNumber()
@@ -281,7 +303,6 @@ List::totalNumber()
      {
            number++;
      }
-
      return number;
 }
 //==============================================

@@ -15,7 +15,7 @@
 //#include "messagequeue.h"
 
 // testnum is set in main.cc
-int testnum = 4;
+int testnum = 5;
 
 
 #define MaxAmount 11
@@ -143,8 +143,8 @@ void consumer1(int dummy)
 }
 
 //----------------------------------------------------
-// 
-//      Synchronous implemented by condition variable
+// Synchronous implemented by condition variable
+//
 //----------------------------------------------------
 
 void producer2(int dummy)

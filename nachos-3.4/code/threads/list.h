@@ -59,7 +59,9 @@ class List {
 
 //========================================
 
-    void removeItem(int id);
+    void* returnItem(int id);
+
+    void *removeItem(int id);
     int  totalNumber();
 
 //========================================

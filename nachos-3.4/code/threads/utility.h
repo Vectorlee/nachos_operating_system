@@ -64,6 +64,13 @@ extern bool DebugIsEnabled(char flag); 	// Is this debug flag enabled?
 
 extern void DEBUG (char flag, char* format, ...);  	// Print debug message 
 							// if flag is enabled
+//IntToStr
+extern void IntToStr(int value, char *buffer);
+
+extern void BaseName(char *buffer, const char *path);
+
+extern void PathName(char *buffer, const char *path);
+
 
 //----------------------------------------------------------------------
 // ASSERT

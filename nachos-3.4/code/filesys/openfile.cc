@@ -27,10 +27,11 @@
 //	"sector" -- the location on disk of the file header for this file
 //----------------------------------------------------------------------
 
-OpenFile::OpenFile(int sector)
+OpenFile::OpenFile(int sector):headerSector(sector)
 { 
     hdr = new FileHeader;
-    hdr->FetchFrom(sector);
+    hdr -> FetchFrom(sector);
+    
     seekPosition = 0;
 }
 
@@ -116,6 +117,9 @@ OpenFile::Write(char *into, int numBytes)
 int
 OpenFile::ReadAt(char *into, int numBytes, int position)
 {
+
+    hdr -> accessTime = stats -> totalTicks;  //set the accessTime of the file.   
+
     int fileLength = hdr->FileLength();
     int i, firstSector, lastSector, numSectors;
     char *buf;
@@ -133,12 +137,16 @@ OpenFile::ReadAt(char *into, int numBytes, int position)
 
     // read in all the full and partial sectors that we need
     buf = new char[numSectors * SectorSize];
+
     for (i = firstSector; i <= lastSector; i++)	
-        synchDisk->ReadSector(hdr->ByteToSector(i * SectorSize), 
+        synchDisk->ReadSector(hdr->ByteToSector(i * SectorSize),            // there is a transfer from linear disk sector to 
+                                                                            // the unconnected disk sector
 					&buf[(i - firstSector) * SectorSize]);
 
     // copy the part we want
     bcopy(&buf[position - (firstSector * SectorSize)], into, numBytes);
+    hdr -> WriteBack(headerSector);     //write back the file headr since we have changed it.
+
     delete [] buf;
     return numBytes;
 }
@@ -146,17 +154,33 @@ OpenFile::ReadAt(char *into, int numBytes, int position)
 int
 OpenFile::WriteAt(char *from, int numBytes, int position)
 {
+    
+    hdr -> modifiedTime = stats -> totalTicks;  //set the modified Time of the file. 
+
     int fileLength = hdr->FileLength();
     int i, firstSector, lastSector, numSectors;
-    bool firstAligned, lastAligned;
+    bool firstAligned, lastAligned, mark;
     char *buf;
 
-    if ((numBytes <= 0) || (position >= fileLength))
-	return 0;				// check request
+    if ((numBytes <= 0) || (position > fileLength))
+        return 0;				// check request
+
+    printf("[+] In the WriteAt of OpenFile, position: %d, numBytes: %d, fileLength: %d\n", position, numBytes, fileLength);
+
+
     if ((position + numBytes) > fileLength)
-	numBytes = fileLength - position;
-    DEBUG('f', "Writing %d bytes at %d, from file of length %d.\n", 	
-			numBytes, position, fileLength);
+    {
+         //if the bytes going to write will exceed the limit of the file size
+         //first, allocate new disk sector
+         mark = fileSystem -> ChangeFileLength(hdr, position + numBytes);
+         if(!mark) 
+            return 0;
+         
+         printf("[+] The current length of file: %d \n", hdr->FileLength());
+         
+    }
+
+    DEBUG('f', "Writing %d bytes at %d, from file of length %d.\n", numBytes, position, fileLength);
 
     firstSector = divRoundDown(position, SectorSize);
     lastSector = divRoundDown(position + numBytes - 1, SectorSize);
@@ -181,6 +205,10 @@ OpenFile::WriteAt(char *from, int numBytes, int position)
     for (i = firstSector; i <= lastSector; i++)	
         synchDisk->WriteSector(hdr->ByteToSector(i * SectorSize), 
 					&buf[(i - firstSector) * SectorSize]);
+
+
+    hdr -> WriteBack(headerSector);     //write back the file headr since we have changed it.
+
     delete [] buf;
     return numBytes;
 }
@@ -195,3 +223,38 @@ OpenFile::Length()
 { 
     return hdr->FileLength(); 
 }
+
+//----------------------------------------------------------------------
+//OpenFile::FileSector()
+//      Return the head sector of the correspondent file  
+//----------------------------------------------------------------------
+
+int 
+OpenFile::FileSector()
+{
+    return headerSector;
+}
+
+int
+OpenFile::FileType()
+{  
+    return hdr -> type;
+}
+
+int
+OpenFile::FilePath()
+{
+    return hdr -> path;
+}
+
+//----------------------------------------------------------------------
+//OpenFile::FileContent
+//      print the content of the file, used for cat
+//----------------------------------------------------------------------
+
+void
+OpenFile::FileContent()
+{
+    hdr -> Print();
+}
+

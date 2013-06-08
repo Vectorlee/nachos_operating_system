@@ -31,6 +31,8 @@ class ThreadManager
               int getCurrentNum();      //get the number of the totoal threads
               void threadStatus();      // 'TS' output the status of all the threads 
 
+              Thread* returnThread(int ID);   // give a identity number, return a thread pointer
+
               void addThread(Thread *newThread);         // add a thread into the list when a thread is forked
               void removeThread(int ID);      // remove a thread from the list when the thread is finished
                

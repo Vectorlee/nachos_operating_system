@@ -63,6 +63,7 @@ Directory::~Directory()
 void
 Directory::FetchFrom(OpenFile *file)
 {
+    //printf("in the function Directory::FetchFrom\n");
     (void) file->ReadAt((char *)table, tableSize * sizeof(DirectoryEntry), 0);
 }
 
@@ -142,6 +143,24 @@ Directory::Add(char *name, int newSector)
     return FALSE;	// no space.  Fix when we have extensible files.
 }
 
+//------------------------------------------------------------------------
+//Directory::Change
+//     Change the file sector of the correspondent directory entry
+//-------------------------------------------------------------------------
+
+bool
+Directory::Change(char *name, int sector)
+{
+    int i = FindIndex(name);
+
+    if (i != -1)
+    {
+	table[i].sector = sector;
+        return TRUE;
+    }
+    return FALSE;
+}
+
 //----------------------------------------------------------------------
 // Directory::Remove
 // 	Remove a file name from the directory.  Return TRUE if successful;
@@ -159,6 +178,55 @@ Directory::Remove(char *name)
 	return FALSE; 		// name not in directory
     table[i].inUse = FALSE;
     return TRUE;	
+}
+
+//---------------------------------------------------------------------
+//Directory::GetEntry()
+// 
+//    give the index of the directory entry, return the sector number of the
+//    correspondent entry.
+//---------------------------------------------------------------------
+
+int 
+Directory::GetEntry(int index)
+{
+    if(index < 2 || index >= tableSize)   // -1, 0, 1    
+        return -1;
+
+    if(!table[index].inUse)
+        return -1;
+
+    return table[index].sector;
+}
+
+void
+Directory::SetEntry(int index, int sector)
+{
+    if(index < 2 || index >= tableSize)   // -1, 0, 1    
+        return;
+
+    if(!table[index].inUse)
+        return;
+
+    table[index].sector = sector;
+}
+
+//-----------------------------------------------------------------------
+//Directory::GetName
+//
+//    Use the index of the directory to get the name of the file.
+//-----------------------------------------------------------------------
+
+char*
+Directory::GetName(int index)
+{
+    if(index < 2 || index >= tableSize)   // -1, 0, 1    
+        return NULL;
+
+    if(!table[index].inUse)
+        return NULL;
+
+    return table[index].name;
 }
 
 //----------------------------------------------------------------------

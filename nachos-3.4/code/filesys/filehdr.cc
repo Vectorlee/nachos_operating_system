@@ -43,11 +43,34 @@ FileHeader::Allocate(BitMap *freeMap, int fileSize)
 { 
     numBytes = fileSize;
     numSectors  = divRoundUp(fileSize, SectorSize);
-    if (freeMap->NumClear() < numSectors)
+    if (freeMap->NumClear() < numSectors + 1)        // here we plus one, since the indirect index sector
 	return FALSE;		// not enough space
 
-    for (int i = 0; i < numSectors; i++)
-	dataSectors[i] = freeMap->Find();
+    if(numSectors <= NumDirect )          // if the sector number of that file smaller than direct index slot
+    {
+        for (int i = 0; i < numSectors; i++)          // then we only need direct index 
+            dataSectors[i] = freeMap->Find();
+
+        indirect = -1;
+    }
+    else
+    {
+        int indirectNum = numSectors - NumDirect;
+        ASSERT(indirectNum < NumInDirect);        
+
+        for (int i = 0; i < NumDirect; i++)
+            dataSectors[i] = freeMap->Find(); 
+
+        indirect = freeMap->Find();
+
+        IndirectIndex *indexptr = new IndirectIndex();        
+        for (int i = 0; i < indirectNum; i++ ) 
+            indexptr -> dataSectors[i] = freeMap -> Find();
+
+        synchDisk->WriteSector(indirect, (char *)indexptr);   //write back
+        
+        delete indexptr; 
+    }
     return TRUE;
 }
 
@@ -61,11 +84,60 @@ FileHeader::Allocate(BitMap *freeMap, int fileSize)
 void 
 FileHeader::Deallocate(BitMap *freeMap)
 {
-    for (int i = 0; i < numSectors; i++) {
-	ASSERT(freeMap->Test((int) dataSectors[i]));  // ought to be marked!
-	freeMap->Clear((int) dataSectors[i]);
+    if(numSectors <= NumDirect)
+    { 
+        for(int i = 0; i < numSectors; i++){       
+            ASSERT(freeMap->Test((int) dataSectors[i]));  // ought to be marked!
+	    freeMap->Clear((int) dataSectors[i]);
+        }
     }
+    else
+    {
+        int indirectNum = numSectors - NumDirect;
+        ASSERT(indirectNum <= NumInDirect);        
+
+        for (int i = 0; i < NumDirect; i++){
+            ASSERT(freeMap->Test((int) dataSectors[i]));  // ought to be marked!
+	    freeMap->Clear((int) dataSectors[i]); 
+        }
+
+        IndirectIndex* indexptr = new IndirectIndex();
+        //here we read the index sector from the disk
+        synchDisk->ReadSector(indirect, (char *)indexptr); 
+
+
+        for (int i = 0; i < indirectNum; i++ ){ 
+            ASSERT(freeMap->Test( (int)(indexptr -> dataSectors[i]) ));  // ought to be marked!
+	    freeMap->Clear( (int)(indexptr -> dataSectors[i]) ); 
+        }
+        
+        ASSERT(freeMap->Test(indirect));  // ought to be marked!
+	freeMap->Clear(indirect);         // clean the index sector  
+        
+        indirect = -1;
+
+        delete indexptr; 
+    }
+
 }
+
+//------------------------------------------------------------
+//FileHeader::InitialSet
+//     Set the initial value of the file 
+//
+//-------------------------------------------------------------
+
+void 
+FileHeader::InitialSet(char *name, int type, int sector)
+{
+    //strncpy(filename, name, MaxFileName);
+    //printf("%s\n", filename);
+
+    this -> type        = type;                    // 0 is for file, 1 is for directory
+    this -> createTime  = stats -> totalTicks;     //set the create time
+    this -> path        = sector;
+}
+
 
 //----------------------------------------------------------------------
 // FileHeader::FetchFrom
@@ -106,7 +178,22 @@ FileHeader::WriteBack(int sector)
 int
 FileHeader::ByteToSector(int offset)
 {
-    return(dataSectors[offset / SectorSize]);
+    ASSERT(offset < numBytes);
+
+    if( offset / SectorSize < NumDirect )
+       return(dataSectors[offset / SectorSize]);
+    else 
+    {
+       IndirectIndex *indexptr = new IndirectIndex();
+       synchDisk->ReadSector(indirect, (char *)indexptr);
+
+       int indexoffset = offset - NumDirect * SectorSize;
+       int sector = indexptr -> dataSectors[indexoffset / SectorSize];
+       delete indexptr;
+       
+       return sector;   
+    } 
+
 }
 
 //----------------------------------------------------------------------
@@ -120,6 +207,163 @@ FileHeader::FileLength()
     return numBytes;
 }
 
+int 
+FileHeader::FileSectorNum()
+{
+    return numSectors;
+}
+
+
+//----------------------------------------------------------------------
+// FileHeader::ChangeLength
+// 	
+//     Set the length of the file, this function is used when we
+//     increase or decrease the size of the file
+//
+//     This file should only be used by OpenFile
+//----------------------------------------------------------------------
+
+bool
+FileHeader::ChangeLength(BitMap *freeMap, int newSize)
+{
+     int newSectorNum;
+     newSectorNum = divRoundUp(newSize, SectorSize);
+
+     ASSERT(newSize >= 0);
+
+     if(newSize > MaxFileSize || (freeMap -> NumClear()) < (newSectorNum - numSectors))
+        return FALSE;
+
+     if(numSectors == newSectorNum)      //if the accural disk sector remain same, 
+     {                                   //we don't need to any thing more.
+         numBytes = newSize;
+         return TRUE;
+     }     
+     else if(newSectorNum > numSectors)  // we increase the size of the file
+     {
+
+         IncreaseFile(freeMap, newSectorNum - numSectors);
+         numSectors = newSectorNum;
+         numBytes = newSize;
+     } 
+     else                // we decrease the size
+     {
+         DecreaseFile(freeMap, numSectors - newSectorNum); 
+         numSectors = newSectorNum;
+         numBytes = newSize;
+     }
+
+     return TRUE;
+}
+
+//----------------------------------------------------------------------
+// FileHeader::IncreaseFile/DecreaseFile
+// 	
+//     Increase or decrease the length of the file, more precisely, 
+//     increase or decrease the number of disk sectors allocated for 
+//     that files, we will allocate new disk sectors for existing files,
+//     or recycle the sectors which have been used
+//
+//          int sectors: the disk sectors we need to add or delete
+//
+//----------------------------------------------------------------------
+
+void
+FileHeader::IncreaseFile(BitMap *freeMap, int sectors)
+{
+     int i, pointer = 0;
+
+     if(numSectors < NumDirect)    //no indirect index is used
+     {
+          for(i = numSectors; i < NumDirect && pointer < sectors; i++, pointer++)
+               dataSectors[i] = freeMap->Find();
+          
+          if(pointer < sectors)
+          {
+               indirect = freeMap -> Find();
+               
+               IndirectIndex *indexptr = new IndirectIndex();        
+               for (i = 0; i < NumInDirect && pointer < sectors; i++, pointer++ ) 
+                   indexptr -> dataSectors[i] = freeMap -> Find();
+
+               synchDisk->WriteSector(indirect, (char *)indexptr);   //write back
+        
+               delete indexptr;  
+          }
+     }
+     else
+     {    
+          if(indirect == -1)
+          {
+               indirect = freeMap -> Find();
+               
+               IndirectIndex *indexptr = new IndirectIndex();        
+               for (i = 0; i < NumInDirect && pointer < sectors; i++, pointer++ ) 
+                   indexptr -> dataSectors[i] = freeMap -> Find();
+
+               synchDisk->WriteSector(indirect, (char *)indexptr);   //write back
+        
+               delete indexptr;  
+          }
+          else
+          {
+               IndirectIndex *indexptr = new IndirectIndex();
+               synchDisk->ReadSector(indirect, (char *)indexptr);
+
+               for (i = numSectors - NumDirect; i < NumInDirect && pointer < sectors; i++, pointer++ ) 
+                   indexptr -> dataSectors[i] = freeMap -> Find();
+
+               synchDisk->WriteSector(indirect, (char *)indexptr);   //write back
+               delete indexptr;
+
+          }
+     }
+}
+
+
+void
+FileHeader::DecreaseFile(BitMap *freeMap, int sectors)
+{
+     int i, pointer = sectors - 1;
+
+     if(numSectors <= NumDirect)                     //no indirect index is used
+     {
+          for(i = numSectors - 1; i >= 0 && pointer >= 0; i--, pointer--)
+          {    
+               ASSERT(freeMap->Test((int) dataSectors[i]));  // ought to be marked!
+	       freeMap->Clear((int) dataSectors[i]);
+          }
+     }
+     else
+     {   
+          IndirectIndex* indexptr = new IndirectIndex();
+          synchDisk->ReadSector(indirect, (char *)indexptr); 
+
+          for(i = numSectors - NumDirect - 1; i >= 0 && pointer >= 0; i--, pointer--)
+          { 
+              ASSERT(freeMap->Test( (int)(indexptr -> dataSectors[i]) ));  // ought to be marked!
+	      freeMap->Clear( (int)(indexptr -> dataSectors[i]) ); 
+          }
+          //Here we don't need to write back
+
+          if(pointer >= 0)
+          {
+              ASSERT(freeMap->Test(indirect));  // ought to be marked!
+	      freeMap->Clear(indirect);         // clean the index sector  
+        
+              indirect = -1;
+              delete indexptr; 
+
+              for(i = NumDirect - 1; i >= 0 && pointer >= 0; i--, pointer--)
+              {
+                  ASSERT(freeMap->Test((int)dataSectors[i]));  // ought to be marked!
+	          freeMap->Clear((int)dataSectors[i]); 
+              } 
+          } 
+     }
+}
+
+
 //----------------------------------------------------------------------
 // FileHeader::Print
 // 	Print the contents of the file header, and the contents of all
@@ -132,10 +376,12 @@ FileHeader::Print()
     int i, j, k;
     char *data = new char[SectorSize];
 
-    printf("FileHeader contents.  File size: %d.  File blocks:\n", numBytes);
-    for (i = 0; i < numSectors; i++)
-	printf("%d ", dataSectors[i]);
-    printf("\nFile contents:\n");
+    //printf("FileHeader contents.  File size: %d.  File blocks:\n", numBytes); 
+    //for (i = 0; i < numSectors; i++)
+    //	printf("%d ", dataSectors[i]);
+    
+    //printf("\nFile contents:\n");
+    
     for (i = k = 0; i < numSectors; i++) {
 	synchDisk->ReadSector(dataSectors[i], data);
         for (j = 0; (j < SectorSize) && (k < numBytes); j++, k++) {
@@ -146,5 +392,7 @@ FileHeader::Print()
 	}
         printf("\n"); 
     }
+     
     delete [] data;
+
 }

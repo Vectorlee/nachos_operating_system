@@ -209,8 +209,8 @@ Machine::Translate(int virtAddr, int* physAddr, int size, bool writing)
     //ASSERT(tlb == NULL || pageTable == NULL);	
     //ASSERT(tlb != NULL || pageTable != NULL);	
 
-// calculate the virtual page number, and offset within the page,
-// from the virtual address
+    // calculate the virtual page number, and offset within the page,
+    // from the virtual address
     vpn = (unsigned) virtAddr / PageSize;
     offset = (unsigned) virtAddr % PageSize;
 
@@ -242,13 +242,10 @@ Machine::Translate(int virtAddr, int* physAddr, int size, bool writing)
         
         if(tlb != NULL)
         {
-
         }  
     }
 
 //=====================================================================================
-
-
 
     if (entry->readOnly && writing) {	// trying to write to a read-only page
 	DEBUG('a', "%d mapped read-only at %d in TLB!\n", virtAddr, i);

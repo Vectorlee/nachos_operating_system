@@ -24,6 +24,9 @@
 #include "system.h"
 
 // dummy function because C++ does not allow pointers to member functions
+//
+// the time interrupt handler schedule a new interrupt, and then excute the handler
+//
 static void TimerHandler(int arg)
 { Timer *p = (Timer *)arg; p->TimerExpired(); }
 

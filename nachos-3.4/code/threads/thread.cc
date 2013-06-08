@@ -46,11 +46,16 @@ Thread::Thread(char* threadName)
     baseTimePeriod = 50;
     currentTimePeriod = 50;
 
+    joinedThread = NULL;
+
 //=================================
 
 
 #ifdef USER_PROGRAM
     space = NULL;
+    filename = NULL;
+
+    killed = FALSE;
 #endif
 }
 
@@ -158,13 +163,14 @@ Thread::Fork(VoidFunctionPtr func, int arg)
 	  name, (int) func, arg);
 
 //===============================================
+
     if((threadmanager -> getCurrentNum()) >= 128 )
     {
-        printf("The number of threads is exceeding 128, fork fucntion failed!\n");
+        printf("[-] The number of threads is exceeding 128, fork fucntion failed!\n");
         return;     //terminate the program
     }
     threadmanager -> addThread(this);
-    printf("add thread: %d\n", threadID);
+    printf("[+] Add thread: %d\n", threadID);
 //===============================================
 
     StackAllocate(func, arg);
@@ -173,6 +179,7 @@ Thread::Fork(VoidFunctionPtr func, int arg)
                                                         //and return the previous level
     scheduler->ReadyToRun(this);	// ReadyToRun assumes that interrupts 
 					// are disabled!
+
     (void) interrupt->SetLevel(oldLevel);
 
 }    
@@ -225,20 +232,39 @@ Thread::CheckOverflow()
 void
 Thread::Finish ()
 {
+
     (void) interrupt->SetLevel(IntOff);		
     ASSERT(this == currentThread);
     
     DEBUG('t', "Finishing thread \"%s\"\n", getName());
-    
-    threadToBeDestroyed = currentThread;
 
 //==============================================
+
+#ifdef USER_PROGRAM 
+    #include "filesys.h"
+    
+    bool mark = FALSE;
+    if(filename != NULL)
+    {
+        mark = fileSystem -> Remove(filename);
+        if(mark)
+            printf("[+] Removed the temp file: %s\n", filename);
+    }
+#endif    
+
+    threadToBeDestroyed -> Append(currentThread);
     
     threadmanager -> removeThread(threadID); //if the thread is not in the list, nothing will happen
-    printf("removed thread: %d\n", threadID);
+    printf("[+] Removed thread: %d\n", threadID);
+
+    if(joinedThread != NULL)
+    {
+        //printf("the shell thread is ready to run.id: %d\n", joinedThread -> getID());
+        scheduler -> ReadyToRun(joinedThread);
+        joinedThread = NULL;
+    }
 
 //==============================================
-    
     Sleep();					// invokes SWITCH
 
     // not reached
@@ -266,16 +292,20 @@ void
 Thread::Yield ()
 {
     Thread *nextThread;
-    IntStatus oldLevel = interrupt->SetLevel(IntOff);   //*****
+    IntStatus oldLevel = interrupt->SetLevel(IntOff);
 
     ASSERT(this == currentThread);
     
     DEBUG('t', "Yielding thread \"%s\"\n", getName());
     
-    nextThread = scheduler->FindNextToRun();
+    nextThread = scheduler -> FindNextToRun();  // if we can't find the next to run, 
+                                                // we will still run this one
+
+    //printf("current Thread yeilding, id: %d\n", currentThread -> getID());
 
     if (nextThread != NULL) {
 //==================================================
+        //printf("find one to replace!, next thread, id: %d\n", nextThread -> getID());
 
         if(currentThread -> getPriority() < nextThread -> getPriority())  //the current thread is still get the prior
         { 
@@ -289,7 +319,7 @@ Thread::Yield ()
 //===================================================
     }
 
-    (void) interrupt->SetLevel(oldLevel);              //****just like the mutex
+    (void) interrupt->SetLevel(oldLevel);
 }
 
 //----------------------------------------------------------------------
@@ -322,10 +352,40 @@ Thread::Sleep ()
     DEBUG('t', "Sleeping thread \"%s\"\n", getName());
 
     status = BLOCKED;            //the current thread
+
+    //printf("Current thread is sleeping, id: %d\n", threadID);
+
     while ((nextThread = scheduler->FindNextToRun()) == NULL)
-	interrupt->Idle();	// no one to run, wait for an interrupt
-        
+         interrupt->Idle();	// no one to run, wait for an interrupt
+    
+    //printf("find next to run, id: %d\n", nextThread -> getID());
+    
     scheduler->Run(nextThread); // returns when we've been signalled
+
+}
+
+//----------------------------------------------------------------------
+//Thread::Join
+//      the current Thread wait the execute the of the provided thread 
+//
+//---------------------------------------------------------------------
+void 
+Thread::Join(int threadID)
+{
+
+    Thread* nextThread;
+    IntStatus oldLevel = interrupt->SetLevel(IntOff);
+
+    ASSERT(this == currentThread);
+
+    nextThread = threadmanager -> returnThread(threadID);  //get the thread pointer from the thread manager
+
+    if(nextThread == NULL)  // we may wait a thread that is already finished.
+       return;
+
+    nextThread -> setJoinedThread(currentThread);
+
+    Sleep();
 }
 
 //----------------------------------------------------------------------

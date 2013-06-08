@@ -120,4 +120,35 @@ SynchList::totalNumber()
     return num;
 
 }
+
+
+void 
+SynchList::SortedInsert(void *item, int sortKey)
+{
+    lock->Acquire();		// enforce mutual exclusive access to the list 
+    
+    list->SortedInsert(item, sortKey);
+    
+    listEmpty->Signal(lock);	// wake up a waiter, if any
+    lock->Release();
+}
+
+
+void*
+SynchList::SortedRemove(int sortKey)
+{
+
+    void *item;
+
+    lock->Acquire();			// enforce mutual exclusion
+    while (list->IsEmpty())
+	listEmpty->Wait(lock);		// wait until list isn't empty
+    
+    item = list->removeItem(sortKey);
+    
+    ASSERT(item != NULL);
+    lock->Release();
+    return item;
+}
+
 //==========================================================

@@ -13,7 +13,9 @@
 // These are all initialized and de-allocated by this file.
 
 Thread *currentThread;			// the thread we are running now
-Thread *threadToBeDestroyed;  		// the thread that just finished
+//**
+List *threadToBeDestroyed;  		// the thread that just finished
+
 Scheduler *scheduler;			// the ready list
 Interrupt *interrupt;			// interrupt status
 Statistics *stats;			// performance metrics
@@ -33,6 +35,7 @@ FileSystem  *fileSystem;
 #endif
 
 #ifdef FILESYS
+FileManager *fileManager;
 SynchDisk   *synchDisk;
 #endif
 
@@ -109,7 +112,6 @@ TimerInterruptHandler(int dummy)
     currentThread -> setCurrentTimePeriod(value / 10);
 */
 //=================================================
-
     //printf("Time interrput!!!\n");
 
     if (interrupt->getStatus() != IdleMode)
@@ -202,9 +204,8 @@ Initialize(int argc, char **argv)
 
 //========================================================
 
-
-    
-    threadToBeDestroyed = NULL;
+    //***
+    threadToBeDestroyed = new List();
 
     // We didn't explicitly allocate the current thread we are running in.
     // But if it ever tries to give up the CPU, we better have a Thread
@@ -212,8 +213,7 @@ Initialize(int argc, char **argv)
     currentThread = new Thread("main");		
     currentThread->setStatus(RUNNING);
 //============================================
-    
-    currentThread -> setPriority(5);
+
     threadmanager -> addThread(currentThread);
 
 //============================================
@@ -222,16 +222,16 @@ Initialize(int argc, char **argv)
     
 #ifdef USER_PROGRAM
     machine = new Machine(debugUserProg);	// this must come first
-
     memorymanager = new MemoryManager();        // initialize the memory manager
 
 #endif
 
 #ifdef FILESYS
     synchDisk = new SynchDisk("DISK");
+    fileManager = new FileManager();
 #endif
 
-#ifdef FILESYS_NEEDED
+#ifdef FILESYS_NEEDED    
     fileSystem = new FileSystem(format);
 #endif
 
@@ -252,6 +252,7 @@ Cleanup()
 //=============================================
 
     delete threadmanager;
+    delete threadToBeDestroyed;
 
 //=============================================
 
@@ -266,15 +267,14 @@ Cleanup()
 #ifdef FILESYS_NEEDED
     delete fileSystem;
 #endif
-
 #ifdef FILESYS
     delete synchDisk;
+    delete fileManager;
 #endif
     
     delete timer;
     delete scheduler;
     delete interrupt;
-    
     Exit(0);
 }
 

@@ -53,7 +53,9 @@
 
 // Size of the thread's private execution stack.
 // WATCH OUT IF THIS ISN'T BIG ENOUGH!!!!!
-#define StackSize	(4 * 1024)	// in words
+
+//#define StackSize     (4 * 1024)      // in words
+#define StackSize	(4 * 2048)	// we double the contention
 
 
 // Thread state
@@ -88,6 +90,8 @@ class Thread {
     int currentTimePeriod;  // 1 ~ 10 
     int baseTimePeriod;
 
+    Thread* joinedThread;
+
 //====================================
 
   public:
@@ -105,6 +109,9 @@ class Thread {
     void Sleep();  				// Put the thread to sleep and 
 						// relinquish the processor
     void Finish();  				// The thread is done executing
+
+
+    void Join(int threadID);   
     
     void CheckOverflow();   			// Check if thread has 
 						// overflowed its stack
@@ -127,6 +134,9 @@ class Thread {
     void setCurrentTimePeriod(int value);
 
     void Clock();
+
+    void setJoinedThread(Thread* pthread) { joinedThread = pthread; }
+    Thread *getJoinedThread() { return joinedThread; } 
 
 //=====================================================
 
@@ -157,6 +167,14 @@ class Thread {
     void RestoreUserState();		// restore user-level register state
 
     AddrSpace *space;			// User code this thread is running.
+
+//==================================================
+
+    char *filename;                     // the corresponding executable file in the disk
+                                        // of this thread
+    bool killed;
+
+//==================================================
 #endif
 };
 

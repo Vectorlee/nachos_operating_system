@@ -28,7 +28,10 @@ extern void Cleanup();				// Cleanup, called when
 						// Nachos is done.
 
 extern Thread *currentThread;			// the thread holding the CPU
-extern Thread *threadToBeDestroyed;  		// the thread that just finished
+
+//***
+extern List *threadToBeDestroyed;  		// the thread that just finished
+
 extern Scheduler *scheduler;			// the ready list
 extern Interrupt *interrupt;			// interrupt status
 extern Statistics *stats;			// performance metrics
@@ -57,7 +60,10 @@ void runProgram(int arg);
 
 #ifdef FILESYS_NEEDED 		// FILESYS or FILESYS_STUB 
 #include "filesys.h"
+#include "filemgr.h"
 extern FileSystem  *fileSystem;
+extern FileManager *fileManager;
+
 #endif
 
 #ifdef FILESYS

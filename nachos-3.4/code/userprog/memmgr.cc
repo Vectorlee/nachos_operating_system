@@ -151,11 +151,29 @@ MemoryManager::loadPage()
 
 
      //printf("virtual page: %d, physical page: %d\n", vpn, phynum); 
-
      //open file and load the page
+
      OpenFile *executable = fileSystem -> Open(filename);
 
-     executable -> ReadAt(&(machine -> mainMemory[phynum * PageSize]), PageSize, vpn * PageSize);       
+#ifdef FILESYS
+     //printf("1 thread id: %d\n", currentThread -> getID());
+     //fileManager -> Append(executable -> FileSector());                   //we put the file manager here 
+     //printf("2 thread id: %d\n", currentThread -> getID());
+     //fileManager -> LockFile(executable -> FileSector());
+     //printf("3 thread id: %d\n", currentThread -> getID());
+#endif
+
+     executable -> ReadAt(&(machine -> mainMemory[phynum * PageSize]), PageSize, vpn * PageSize);
+
+
+#ifdef FILESYS
+     //printf("4 thread id: %d\n", currentThread -> getID());
+     //fileManager -> ReleaseFile(executable -> FileSector());
+     //printf("5 thread id: %d\n", currentThread -> getID());
+     //fileManager -> Remove(executable -> FileSector());
+     //printf("6 thread id: %d\n", currentThread -> getID());
+#endif
+
 
      // set the pagetable
      machine -> pageTable[vpn].physicalPage = phynum;
@@ -207,7 +225,19 @@ MemoryManager::unloadPage()
          (stats -> numWriteBack)++;
 
          OpenFile *executable = fileSystem -> Open(filename);     
+
+#ifdef FILESYS
+     //fileManager -> Append(executable -> FileSector());                   //we put the file manager here 
+     //fileManager -> LockFile(executable -> FileSector());
+#endif
+
          executable -> WriteAt(&(machine -> mainMemory[phynum * PageSize]), PageSize, vpnum * PageSize);
+
+
+#ifdef FILESYS
+     //fileManager -> ReleaseFile(executable -> FileSector());
+     //fileManager -> Remove(executable -> FileSector());
+#endif
 
          delete executable;
      }

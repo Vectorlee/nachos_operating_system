@@ -2,7 +2,7 @@
 # All rights reserved.  See copyright.h for copyright notice and limitation 
 # of liability and disclaimer of warranty provisions.
 
-MAKE = gmake
+MAKE = make
 LPR = lpr
 
 all: 
@@ -21,7 +21,7 @@ all:
 
 # don't delete executables in "test" in case there is no cross-compiler
 clean:
-	/bin/csh -c "rm -f *~ */{core,nachos,DISK,*.o,swtch.s,*~} test/{*.coff} bin/{coff2flat,coff2noff,disassemble,out}"
+	/bin/sh -c "rm -f *~ */{core,nachos,DISK,*.o,swtch.s,*~} test/{*.coff} bin/{coff2flat,coff2noff,disassemble,out}"
 
 print:
 	/bin/csh -c "$(LPR) Makefile* */Makefile"

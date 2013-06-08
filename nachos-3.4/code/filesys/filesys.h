@@ -45,7 +45,7 @@ class FileSystem {
   public:
     FileSystem(bool format) {}
 
-    bool Create(char *name, int initialSize) { 
+    bool Create(char *name, int initialSize, const char *path = NULL) { 
 	int fileDescriptor = OpenForWrite(name);
 
 	if (fileDescriptor == -1) return FALSE;
@@ -60,7 +60,7 @@ class FileSystem {
 	  return new OpenFile(fileDescriptor);
       }
 
-    bool Remove(char *name) { return Unlink(name) == 0; }
+    bool Remove(char *name, const char *path = NULL) { return Unlink(name) == 0; }
 
 };
 
@@ -74,22 +74,43 @@ class FileSystem {
 					// the disk, so initialize the directory
     					// and the bitmap of free blocks.
 
-    bool Create(char *name, int initialSize);  	
-					// Create a file (UNIX creat)
+    bool Create(char *name, int initialSize, const char *path = NULL);  	
+					                   // Create a file (UNIX creat)
+    bool CreateDirectory(char *name, const char *path = NULL);   // Create a directory
 
-    OpenFile* Open(char *name); 	// Open a file (UNIX open)
+    OpenFile* Open(char *name); 	                   // Open a file (UNIX open)
 
-    bool Remove(char *name);  		// Delete a file (UNIX unlink)
+    bool Remove(char *name, const char *path = NULL);            // Delete a file (UNIX unlink)
 
-    void List();			// List all the files in the file system
+    bool RemoveDirectory(char *name);       // recursively remove a directory.
+
+    bool ChangeFileLength(FileHeader *hdr, int newSize);   // change the length of a specific file
+
+    bool ChangeDirectory(int sector);   // change the directory of current file system. 'cd' 
+
+    int FindFile(const char* strpath);           // Give a path, return the sector number of the file header.
+
+    void MoveFile(char *from, char* go, char *oldname, char* newname);  //
+
+    void CopyFile(char *from, char* go, char *oldname, char* newname);  //
+
+    void WorkingDirectory();
+
+
+    void List();			// List all the files in the file system, 'ls'
 
     void Print();			// List all the files and their contents
 
   private:
-   OpenFile* freeMapFile;		// Bit map of free disk blocks,
+     OpenFile* freeMapFile;		// Bit map of free disk blocks,
 					// represented as a file
-   OpenFile* directoryFile;		// "Root" directory -- list of 
+     OpenFile* directoryFile;		// "Root" directory -- list of 
 					// file names, represented as a file
+                                        // we need to make this variable like a current directory.
+
+   // Actually, we need more variables to make it clear
+   //these two variable will remain in the memory!!
+
 };
 
 #endif // FILESYS

@@ -65,12 +65,18 @@ class Directory {
 
     bool Remove(char *name);		// Remove a file from the directory
 
+    bool Change(char *name, int sector);
+
+    int  GetEntry(int index);
+    void SetEntry(int index, int sector);    
+
+    char* GetName(int index);
+
     void List();			// Print the names of all the files
 					//  in the directory
     void Print();			// Verbose print of the contents
 					//  of the directory -- all the file
 					//  names and their contents.
-
   private:
     int tableSize;			// Number of directory entries
     DirectoryEntry *table;		// Table of pairs: 

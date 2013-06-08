@@ -29,8 +29,11 @@ CreateTempFile(OpenFile *executable, char *tempfile, int filesize)
 {
     NoffHeader noffH;
 
+#ifdef FILESYS
+    //fileManager -> LockFile(executable -> FileSector()); 
+#endif
+
     executable -> ReadAt((char *)&noffH, sizeof(noffH), 0);
-    
     if ((noffH.noffMagic != NOFFMAGIC) && (WordToHost(noffH.noffMagic) == NOFFMAGIC))
     	SwapHeader(&noffH);
  
@@ -40,7 +43,6 @@ CreateTempFile(OpenFile *executable, char *tempfile, int filesize)
 
     //read the original executable file to the buffer
     memset(Buffer, 0, sizeof(Buffer));
-
     if (noffH.code.size > 0) {
 
         executable -> ReadAt(Buffer, noffH.code.size, noffH.code.inFileAddr);
@@ -50,16 +52,31 @@ CreateTempFile(OpenFile *executable, char *tempfile, int filesize)
         executable -> ReadAt(Buffer + noffH.code.size, noffH.initData.size, noffH.initData.inFileAddr);
     }
 
+#ifdef FILESYS
+    //fileManager -> ReleaseFile(executable -> FileSector()); 
+#endif
 
     //create a new file    
-    fileSystem -> Create(tempfile, filesize);
-    
-
+    fileSystem -> Create(tempfile, filesize);    
     //write the data to the new file
     OpenFile *tempexe = fileSystem -> Open(tempfile);
+
+
+#ifdef FILESYS
+    //fileManager -> Append(tempexe -> FileSector());                   //we put the file manager here
+    //fileManager -> LockFile(tempexe -> FileSector()); 
+#endif
+
     tempexe -> WriteAt(Buffer, filesize, 0);
 
+
+#ifdef FILESYS
+    //fileManager -> ReleaseFile(tempexe -> FileSector());
+    //fileManager -> Remove(tempexe -> FileSector());                   //we put the file manager here 
+#endif
+
     delete tempexe;  //close temp file
+
 }
 
 //---------------------------------------------------------------------
@@ -67,6 +84,7 @@ CreateTempFile(OpenFile *executable, char *tempfile, int filesize)
 //          Transfer the int value to a char string
 //
 //---------------------------------------------------------------------
+/*
 void 
 IntToStr(int value, char *buffer)
 {
@@ -87,7 +105,7 @@ IntToStr(int value, char *buffer)
  
      return;
 }
-
+*/
 
 //----------------------------------------------------------------------
 // StartProcess
@@ -98,13 +116,17 @@ IntToStr(int value, char *buffer)
 void
 StartProcess(char *filename)
 {
-
     // create user space
-    OpenFile *executable = fileSystem->Open(filename);
+
+#ifdef FILESYS
+    //fileManager -> Append(executable -> FileSector());                   //we put the file manager here
+#endif
+    OpenFile *executable = fileSystem -> Open(filename);
+
     AddrSpace *space;
 
     if (executable == NULL) {
-	printf("Unable to open file %s\n", filename);
+	printf("[-] Unable to open file %s\n", filename);
 	return;
     }
     space = new AddrSpace(executable);          //one page table and number of pages    
@@ -130,7 +152,13 @@ StartProcess(char *filename)
     currentThread -> space = space;
     currentThread -> filename = tempfile;
 
+
+#ifdef FILESYS
+    //fileManager -> Remove(executable -> FileSector());                   //we put the file manager here 
+#endif
     delete executable;			// close file
+
+
 
     space->InitRegisters();		// set the initial register values
     space->RestoreState();		// load page table register

@@ -132,7 +132,6 @@ main(int argc, char **argv)
 	}
 #endif // USER_PROGRAM
 
-
 #ifdef FILESYS
 	if (!strcmp(*argv, "-cp")) { 		// copy from UNIX to Nachos
 	    ASSERT(argc > 2);
@@ -180,7 +179,6 @@ main(int argc, char **argv)
     }
 */
 //================================================
-
 
     currentThread->Finish();	// NOTE: if the procedure "main" 
 				// returns, then the program "nachos"

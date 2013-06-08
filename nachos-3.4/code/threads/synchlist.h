@@ -34,9 +34,11 @@ class SynchList {
     void Mapcar(VoidFunctionPtr func);
 
 //=============================================
-
     bool isEmpty();
     int  totalNumber();
+
+    void SortedInsert(void *item, int sortKey);
+    void *SortedRemove(int sortKey);
 
 //=============================================
 

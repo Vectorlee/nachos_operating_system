@@ -102,7 +102,7 @@ Machine::RaiseException(ExceptionType which, int badVAddr)
 {
     DEBUG('m', "Exception: %s\n", exceptionNames[which]);
     
-//  ASSERT(interrupt->getStatus() == UserMode);
+//ASSERT(interrupt->getStatus() == UserMode);
     registers[BadVAddrReg] = badVAddr;
     DelayedLoad(0, 0);			// finish anything in progress
     interrupt->setStatus(SystemMode);

@@ -1,0 +1,2 @@
+This is the file for the intercommunication between different threads.
+We use the message queue to implement it, and this file is used for the generation of Key
